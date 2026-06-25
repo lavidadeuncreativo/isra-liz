@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1100" role="img" aria-labelledby="title desc">
+  <title id="title">NOSOTROS</title>
+  <desc id="desc">Placeholder para sustituir por una fotografía real.</desc>
+  <defs>
+    <filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="7"/><feColorMatrix values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 .08 0"/></filter>
+  </defs>
+  <rect width="900" height="1100" fill="#b6aaa4"/>
+  <rect width="900" height="1100" filter="url(#noise)" opacity=".42"/>
+  <circle cx="450" cy="420" r="210" fill="#563d35" opacity=".2"/>
+  <rect x="110" y="810" width="680" height="1" fill="#fff" opacity=".55"/>
+  <text x="450" y="875" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="7">NOSOTROS</text>
+  <text x="450" y="930" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="19" letter-spacing="3" opacity=".84">SUSTITUIR POR FOTOGRAFÍA</text>
+</svg>
