@@ -86,7 +86,7 @@ function StoryScene({
   index: number;
 }) {
   return (
-    <section id={id} className={`story-scene story-scene-${index + 1}`} data-story-scene>
+    <section id={id} className={`story-scene story-scene-${index + 1}`} data-story-scene data-scene-index={index}>
       <div className="scene-stage">
         <div className="scene-layout">
           <div className="scene-copy">
@@ -99,13 +99,26 @@ function StoryScene({
             </p>
           </div>
           <figure className="story-photo reveal-media">
-            <Image src={image} alt={alt} fill sizes="(max-width: 820px) 76vw, 38vw" />
+            <Image src={image} alt={alt} fill sizes="(max-width: 820px) 82vw, 38vw" />
           </figure>
         </div>
       </div>
     </section>
   );
 }
+
+type ScrubRevealOptions = {
+  end?: string;
+  hold?: number;
+  fromBlur?: number;
+  fromScale?: number;
+  fromY?: number;
+  outBlur?: number;
+  outOpacity?: number;
+  outScale?: number;
+  outY?: number;
+  stagger?: number;
+};
 
 export default function WeddingExperience({ data }: Props) {
   const rootRef = useRef<HTMLElement>(null);
@@ -129,12 +142,80 @@ export default function WeddingExperience({ data }: Props) {
 
   useLayoutEffect(() => {
     const root = rootRef.current;
-    if (!root) return;
+    if (!root || !entered) return;
 
     gsap.registerPlugin(ScrollTrigger);
 
     const mm = gsap.matchMedia();
     const ctx = gsap.context(() => {
+      const clearMotion = () => {
+        gsap.set(
+          [
+            ".reveal-word",
+            ".reveal-support",
+            ".reveal-media",
+            "[data-reveal-item]",
+            "[data-gallery-item]",
+          ],
+          {
+            clearProps: "all",
+            opacity: 1,
+            filter: "none",
+            transform: "none",
+          },
+        );
+      };
+
+      const createScrubReveal = (trigger: HTMLElement, targets: Iterable<HTMLElement>, options: ScrubRevealOptions = {}) => {
+        const nodes = Array.from(targets).filter(Boolean);
+        if (!nodes.length) return;
+
+        const timeline = gsap.timeline({
+          scrollTrigger: {
+            trigger,
+            start: "top 82%",
+            end: options.end ?? "bottom 18%",
+            scrub: 0.9,
+            invalidateOnRefresh: true,
+          },
+        });
+
+        timeline
+          .fromTo(
+            nodes,
+            {
+              opacity: 0,
+              filter: `blur(${options.fromBlur ?? 18}px)`,
+              y: options.fromY ?? 44,
+              scale: options.fromScale ?? 0.98,
+            },
+            {
+              opacity: 1,
+              filter: "blur(0px)",
+              y: 0,
+              scale: 1,
+              duration: 0.34,
+              stagger: options.stagger ?? 0.07,
+              ease: "none",
+            },
+            0,
+          )
+          .to({}, { duration: options.hold ?? 0.28 })
+          .to(
+            nodes,
+            {
+              opacity: options.outOpacity ?? 0.12,
+              filter: `blur(${options.outBlur ?? 18}px)`,
+              y: options.outY ?? -30,
+              scale: options.outScale ?? 0.98,
+              duration: 0.3,
+              stagger: 0.04,
+              ease: "none",
+            },
+            0.7,
+          );
+      };
+
       mm.add(
         {
           desktop: "(min-width: 821px)",
@@ -149,23 +230,18 @@ export default function WeddingExperience({ data }: Props) {
           };
 
           if (conditions.reduce) {
-            gsap.set(".reveal-word, .reveal-media, .reveal-support", {
-              clearProps: "all",
-              opacity: 1,
-              filter: "none",
-              transform: "none",
-            });
+            clearMotion();
             return;
           }
 
           const intro = root.querySelector<HTMLElement>("[data-intro-scene]");
-          const introWords = intro?.querySelectorAll<HTMLElement>(".reveal-word");
-          const introSupport = intro?.querySelectorAll<HTMLElement>(".reveal-support");
+          const introWords = intro ? Array.from(intro.querySelectorAll<HTMLElement>(".reveal-word")) : [];
+          const introSupport = intro ? Array.from(intro.querySelectorAll<HTMLElement>(".reveal-support")) : [];
           const headLiz = intro?.querySelector<HTMLElement>("[data-head-liz]");
           const headIsrael = intro?.querySelector<HTMLElement>("[data-head-israel]");
           const heart = intro?.querySelector<HTMLElement>("[data-heart]");
 
-          if (intro && introWords && headLiz && headIsrael && heart) {
+          if (intro && introWords.length && headLiz && headIsrael && heart) {
             const introTimeline = gsap.timeline({
               scrollTrigger: {
                 trigger: intro,
@@ -178,44 +254,51 @@ export default function WeddingExperience({ data }: Props) {
 
             introTimeline
               .fromTo(
-                introSupport ?? [],
-                { opacity: 0, filter: "blur(16px)", y: 24 },
-                { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.18, stagger: 0.04 },
+                introSupport,
+                { opacity: 0, filter: "blur(18px)", y: 26 },
+                { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.18, stagger: 0.05, ease: "none" },
                 0,
               )
               .fromTo(
                 introWords,
-                { opacity: 0, filter: "blur(24px)", y: 76, rotateX: 72, transformOrigin: "50% 100%" },
-                { opacity: 1, filter: "blur(0px)", y: 0, rotateX: 0, duration: 0.34, stagger: 0.018, ease: "power3.out" },
-                0,
+                { opacity: 0, filter: "blur(24px)", y: 76, rotateX: 74, transformOrigin: "50% 100%" },
+                { opacity: 1, filter: "blur(0px)", y: 0, rotateX: 0, duration: 0.32, stagger: 0.018, ease: "none" },
+                0.04,
               )
               .fromTo(
                 [headLiz, headIsrael],
-                { opacity: 0, filter: "blur(22px)", scale: 0.84 },
-                { opacity: 1, filter: "blur(0px)", scale: 1, duration: 0.22, stagger: 0.04 },
-                0.05,
+                { opacity: 0, filter: "blur(22px)", y: 64, scale: 0.78 },
+                { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, duration: 0.24, stagger: 0.05, ease: "none" },
+                0.12,
               )
-              .to(headLiz, { x: conditions.mobile ? 82 : 210, rotation: -2, duration: 0.34, ease: "power2.inOut" }, 0.34)
-              .to(headIsrael, { x: conditions.mobile ? -82 : -210, rotation: 2, duration: 0.34, ease: "power2.inOut" }, 0.34)
               .fromTo(
                 heart,
-                { opacity: 0, filter: "blur(22px)", scale: 0.35 },
-                { opacity: 1, filter: "blur(0px)", scale: 1, duration: 0.22, ease: "back.out(1.5)" },
-                0.5,
+                { opacity: 0, filter: "blur(18px)", y: 26, scale: 0.58 },
+                { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, duration: 0.18, ease: "none" },
+                0.22,
               )
-              .to([introWords, introSupport, headLiz, headIsrael, heart], {
-                opacity: 0,
-                filter: "blur(20px)",
-                y: -38,
-                duration: 0.22,
-                stagger: 0.005,
-              }, 0.78);
+              .to(headLiz, { x: conditions.mobile ? -20 : -58, y: 12, rotation: -7, duration: 0.18, ease: "none" }, 0.48)
+              .to(headIsrael, { x: conditions.mobile ? 20 : 58, y: 12, rotation: 7, duration: 0.18, ease: "none" }, 0.48)
+              .to(heart, { y: -8, scale: 1.04, duration: 0.12, ease: "none" }, 0.52)
+              .to(
+                [introWords, introSupport, headLiz, headIsrael, heart],
+                {
+                  opacity: 0.08,
+                  filter: "blur(18px)",
+                  y: -46,
+                  duration: 0.28,
+                  stagger: 0.005,
+                  ease: "none",
+                },
+                0.74,
+              );
           }
 
           gsap.utils.toArray<HTMLElement>("[data-story-scene]").forEach((scene) => {
             const words = scene.querySelectorAll<HTMLElement>(".reveal-word");
             const support = scene.querySelectorAll<HTMLElement>(".reveal-support");
             const media = scene.querySelectorAll<HTMLElement>(".reveal-media");
+            const index = Number(scene.dataset.sceneIndex || 0);
 
             const timeline = gsap.timeline({
               scrollTrigger: {
@@ -230,47 +313,76 @@ export default function WeddingExperience({ data }: Props) {
             timeline
               .fromTo(
                 support,
-                { opacity: 0, filter: "blur(16px)", y: 24 },
-                { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.18, stagger: 0.04 },
+                { opacity: 0, filter: "blur(16px)", y: 22 },
+                { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.18, stagger: 0.04, ease: "none" },
                 0,
               )
               .fromTo(
                 words,
-                { opacity: 0, filter: "blur(24px)", y: 72, rotateX: 68, transformOrigin: "50% 100%" },
-                { opacity: 1, filter: "blur(0px)", y: 0, rotateX: 0, duration: 0.34, stagger: 0.014, ease: "power3.out" },
-                0,
+                { opacity: 0, filter: "blur(24px)", y: 70, rotateX: 68, transformOrigin: "50% 100%" },
+                { opacity: 1, filter: "blur(0px)", y: 0, rotateX: 0, duration: 0.34, stagger: 0.014, ease: "none" },
+                0.04,
               )
               .fromTo(
                 media,
-                { opacity: 0, filter: "blur(24px)", y: 48, scale: 0.9, rotation: indexFromScene(scene) % 2 ? 3 : -3 },
-                { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, rotation: indexFromScene(scene) % 2 ? 1.2 : -1.2, duration: 0.32, ease: "power3.out" },
-                0.08,
+                { opacity: 0, filter: "blur(22px)", y: 44, scale: 0.9, rotation: index % 2 ? 4 : -4 },
+                { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, rotation: index % 2 ? 1.4 : -1.4, duration: 0.3, ease: "none" },
+                0.12,
               )
               .to({}, { duration: 0.18 })
-              .to(words, { opacity: 0, filter: "blur(20px)", y: -44, duration: 0.22, stagger: 0.006 }, 0.76)
-              .to(support, { opacity: 0, filter: "blur(16px)", y: -28, duration: 0.18 }, 0.78)
-              .to(media, { opacity: 0, filter: "blur(22px)", y: -34, scale: 0.96, duration: 0.2 }, 0.76);
+              .to(words, { opacity: 0.08, filter: "blur(18px)", y: -42, duration: 0.24, stagger: 0.006, ease: "none" }, 0.74)
+              .to(support, { opacity: 0.1, filter: "blur(14px)", y: -24, duration: 0.18, ease: "none" }, 0.76)
+              .to(media, { opacity: 0.08, filter: "blur(20px)", y: -28, scale: 0.96, duration: 0.22, ease: "none" }, 0.74);
           });
 
           gsap.utils.toArray<HTMLElement>("[data-reveal-section]").forEach((section) => {
             const children = section.querySelectorAll<HTMLElement>("[data-reveal-item]");
-            gsap.fromTo(
-              children,
-              { opacity: 0, filter: "blur(18px)", y: 42 },
-              {
-                opacity: 1,
-                filter: "blur(0px)",
-                y: 0,
-                duration: 0.9,
-                stagger: 0.09,
-                ease: "power3.out",
-                scrollTrigger: {
-                  trigger: section,
-                  start: "top 76%",
-                  toggleActions: "play none none reverse",
-                },
+            createScrubReveal(section, children);
+          });
+
+          gsap.utils.toArray<HTMLElement>("[data-gallery-item]").forEach((item, index) => {
+            const timeline = gsap.timeline({
+              scrollTrigger: {
+                trigger: item,
+                start: "top 88%",
+                end: "bottom 16%",
+                scrub: 0.9,
+                invalidateOnRefresh: true,
               },
-            );
+            });
+
+            timeline
+              .fromTo(
+                item,
+                {
+                  opacity: 0,
+                  filter: "blur(22px)",
+                  y: 70,
+                  scale: 0.92,
+                  rotation: index % 2 ? 4 : -4,
+                },
+                {
+                  opacity: 1,
+                  filter: "blur(0px)",
+                  y: 0,
+                  scale: 1,
+                  rotation: index % 2 ? 1.2 : -1.2,
+                  duration: 0.4,
+                  ease: "none",
+                },
+              )
+              .to({}, { duration: 0.2 })
+              .to(
+                item,
+                {
+                  opacity: 0.12,
+                  filter: "blur(18px)",
+                  y: -36,
+                  scale: 0.97,
+                  duration: 0.4,
+                  ease: "none",
+                },
+              );
           });
 
           ScrollTrigger.refresh();
@@ -282,7 +394,7 @@ export default function WeddingExperience({ data }: Props) {
       mm.revert();
       ctx.revert();
     };
-  }, []);
+  }, [entered]);
 
   function enter(withAudio: boolean) {
     setEntered(true);
@@ -298,6 +410,7 @@ export default function WeddingExperience({ data }: Props) {
   async function toggleAudio() {
     const audio = audioRef.current;
     if (!audio) return;
+
     if (audio.paused) {
       try {
         await audio.play();
@@ -383,18 +496,52 @@ export default function WeddingExperience({ data }: Props) {
       <section className="intro-scene" data-intro-scene>
         <div className="scene-stage intro-stage">
           <div className="paper-noise" aria-hidden="true" />
-          <div className="intro-copy">
-            <p className="kicker reveal-support">Todo empezó mucho antes</p>
-            <h2 className="intro-title"><Words text="¿Quién habría pensado que estos dos se iban a casar?" /></h2>
-            <p className="intro-instruction reveal-support">Sigue bajando</p>
+          <div className="intro-shell">
+            <div className="intro-copy">
+              <p className="kicker reveal-support">{data.intro.kicker}</p>
+              <h2 className="intro-title"><Words text={data.intro.title} /></h2>
+              <p className="intro-lead reveal-support">{data.intro.body}</p>
+            </div>
+
+            <div className="intro-portraits">
+              <figure className="intro-portrait" data-head-liz>
+                <div className="intro-portrait-art">
+                  <span className="portrait-halo" aria-hidden="true" />
+                  <Image
+                    src="/images/hero-liz.png"
+                    alt="Liz de niña"
+                    fill
+                    sizes="(max-width: 820px) 32vw, 240px"
+                    priority
+                    className="cutout-image"
+                  />
+                </div>
+                <figcaption>Liz</figcaption>
+              </figure>
+
+              <div className="intro-heart-cluster" data-heart>
+                <div className="heart-shape" aria-hidden="true"><span /></div>
+                <small>{data.date.short}</small>
+              </div>
+
+              <figure className="intro-portrait" data-head-israel>
+                <div className="intro-portrait-art">
+                  <span className="portrait-halo" aria-hidden="true" />
+                  <Image
+                    src="/images/hero-israel.png"
+                    alt="Israel de niño"
+                    fill
+                    sizes="(max-width: 820px) 32vw, 240px"
+                    priority
+                    className="cutout-image"
+                  />
+                </div>
+                <figcaption>Israel</figcaption>
+              </figure>
+            </div>
+
+            <p className="intro-instruction reveal-support">{data.intro.instruction}</p>
           </div>
-          <figure className="child-head child-head-liz" data-head-liz>
-            <Image src="/images/infancia-liz.svg" alt="Liz de niña" fill sizes="220px" priority />
-          </figure>
-          <figure className="child-head child-head-israel" data-head-israel>
-            <Image src="/images/infancia-israel.svg" alt="Israel de niño" fill sizes="220px" priority />
-          </figure>
-          <div className="heart-shape" data-heart aria-hidden="true"><span /></div>
         </div>
       </section>
 
@@ -407,15 +554,15 @@ export default function WeddingExperience({ data }: Props) {
         />
       ))}
 
-      <section className="reveal-scene story-scene" data-story-scene>
+      <section className="reveal-scene story-scene" data-story-scene data-scene-index={data.story.length}>
         <div className="scene-stage reveal-stage">
-          <p className="reveal-small reveal-support">Así que sí…</p>
-          <h2 className="reveal-title"><Words text="Nos vamos a casar." /></h2>
-          <p className="story-body"><Words text="Y la verdad, nos emociona muchísimo poder celebrarlo contigo." /></p>
+          <p className="reveal-small reveal-support">{data.announcement.kicker}</p>
+          <h2 className="reveal-title"><Words text={data.announcement.title} /></h2>
+          <p className="story-body"><Words text={data.announcement.body} /></p>
         </div>
       </section>
 
-      <section className="invite-scene story-scene" data-story-scene>
+      <section className="invite-scene story-scene" data-story-scene data-scene-index={data.story.length + 1}>
         <div className="scene-stage invite-stage">
           <p className="kicker reveal-support">Guarda la fecha</p>
           <h2 className="couple-title"><Words text={`${data.couple.partnerOne} & ${data.couple.partnerTwo}`} /></h2>
@@ -475,7 +622,7 @@ export default function WeddingExperience({ data }: Props) {
         </div>
         <div className="gallery-grid">
           {data.gallery.map((item, index) => (
-            <figure className={`gallery-item gallery-item-${index + 1}`} key={item.src} data-reveal-item>
+            <figure className={`gallery-item gallery-item-${index + 1}`} key={item.src} data-gallery-item>
               <div className="gallery-image"><Image src={item.src} alt={item.alt} fill sizes="(max-width: 820px) 92vw, 46vw" /></div>
               <figcaption>{item.caption}</figcaption>
             </figure>
@@ -521,12 +668,8 @@ export default function WeddingExperience({ data }: Props) {
             <label className="radio-label"><input type="radio" name="attendance" value="Sí asistiré" checked={attendance === "Sí asistiré"} onChange={(event) => setAttendance(event.target.value)} required /> Sí, ahí estaré</label>
             <label className="radio-label"><input type="radio" name="attendance" value="No podré asistir" checked={attendance === "No podré asistir"} onChange={(event) => setAttendance(event.target.value)} required /> No podré asistir</label>
           </fieldset>
-          {isNotAttending ? <input type="hidden" name="guests" value="0" /> : null}
-          <div className="form-row">
-            <label>Número de asistentes<select name="guests" defaultValue="1" disabled={isNotAttending}><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></label>
-            <label>Teléfono<input name="phone" inputMode="tel" maxLength={30} /></label>
-          </div>
-          {isNotAttending ? <p className="form-helper">Gracias por avisarnos con tiempo. Te vamos a extrañar mucho ese día.</p> : null}
+          {isNotAttending ? <p className="form-helper">Gracias por avisarnos con tiempo. Te vamos a extrañar muchísimo ese día.</p> : <p className="form-helper">Tu invitación ya contempla los lugares reservados especialmente para ti.</p>}
+          <label>Teléfono<input name="phone" inputMode="tel" maxLength={30} /></label>
           <label>Correo electrónico<input name="email" type="email" maxLength={160} /></label>
           <label>Alergias o restricciones alimentarias<textarea name="dietary" rows={3} maxLength={500} /></label>
           <label>Mensaje para nosotros<textarea name="message" rows={4} maxLength={1000} /></label>
@@ -536,20 +679,21 @@ export default function WeddingExperience({ data }: Props) {
       </section>
 
       <section id="regalos" className="content-section gifts-section" data-reveal-section>
-        <div className="section-heading" data-reveal-item>
-          <p className="eyebrow">Mesa de experiencias</p>
-          <h2>El mejor regalo es compartir este día.</h2>
-          <p>Quien quiera tener un detalle adicional puede ayudarnos a construir recuerdos para nuestra luna de miel.</p>
+        <div className="gift-panel" data-reveal-item>
+          <div className="gift-copy">
+            <p className="eyebrow">{data.gifting.eyebrow}</p>
+            <h2>{data.gifting.title}</h2>
+            <p>{data.gifting.body}</p>
+          </div>
+          <div className="gift-actions-stack">
+            {hasGiftLink ? (
+              <a className="button button-primary" href={giftLink} target="_blank" rel="noreferrer">{data.gifting.cta}</a>
+            ) : (
+              <button className="button button-primary" type="button" onClick={() => setGiftOpen(true)}>{data.gifting.cta}</button>
+            )}
+            <p className="gift-soft-note">{data.gifting.gentleNote}</p>
+          </div>
         </div>
-        <div className="gift-grid">
-          {data.gifts.map((gift) => (
-            <article className="gift-card" key={gift.title} data-reveal-item>
-              <span>{gift.amount}</span><h3>{gift.title}</h3><p>{gift.note}</p>
-              <button type="button" onClick={() => hasGiftLink ? window.open(giftLink, "_blank", "noopener,noreferrer") : setGiftOpen(true)}>Elegir este detalle</button>
-            </article>
-          ))}
-        </div>
-        <p className="gift-note" data-reveal-item>También tendremos la tradicional dinámica del sobre durante la celebración.</p>
       </section>
 
       <section id="faq" className="content-section faq-section" data-reveal-section>
@@ -560,8 +704,8 @@ export default function WeddingExperience({ data }: Props) {
       </section>
 
       <footer className="closing-section" data-reveal-section>
-        <p data-reveal-item>Si hace años nos hubieran enseñado esas fotos, nadie habría imaginado cómo terminaría esta historia.</p>
-        <h2 data-reveal-item>Ahora solo falta celebrarlo contigo.</h2>
+        <p data-reveal-item>{data.closing.body}</p>
+        <h2 data-reveal-item>{data.closing.title}</h2>
         <span data-reveal-item>{data.couple.partnerOne} &amp; {data.couple.partnerTwo}</span>
       </footer>
 
@@ -569,18 +713,13 @@ export default function WeddingExperience({ data }: Props) {
         <div className="gift-modal" role="dialog" aria-modal="true" aria-label="Información para regalo">
           <button className="modal-backdrop" aria-label="Cerrar" onClick={() => setGiftOpen(false)} />
           <div className="modal-card">
-            <p className="eyebrow">Detalle para la luna de miel</p>
-            <h2>La mesa digital estará disponible muy pronto.</h2>
-            <p>Si quieres tener un detalle adicional para nosotros, en unos días compartiremos aquí la forma más cómoda de hacerlo.</p>
+            <p className="eyebrow">{data.gifting.eyebrow}</p>
+            <h2>{data.gifting.fallbackTitle}</h2>
+            <p>{data.gifting.fallbackBody}</p>
             <button className="button button-primary" type="button" onClick={() => setGiftOpen(false)}>Entendido</button>
           </div>
         </div>
       )}
     </main>
   );
-}
-
-function indexFromScene(scene: HTMLElement) {
-  const scenes = Array.from(document.querySelectorAll("[data-story-scene]"));
-  return scenes.indexOf(scene);
 }

@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 type Payload = {
   name?: unknown;
   attendance?: unknown;
-  guests?: unknown;
   phone?: unknown;
   email?: unknown;
   dietary?: unknown;
@@ -68,7 +67,6 @@ export async function POST(request: Request) {
 
     const name = text(payload.name, 120);
     const attendance = text(payload.attendance, 50);
-    const guests = text(payload.guests, 5) || "1";
     const phone = text(payload.phone, 30);
     const email = text(payload.email, 160);
     const dietary = text(payload.dietary, 500);
@@ -92,7 +90,6 @@ export async function POST(request: Request) {
     const safe = {
       name: escapeHtml(name),
       attendance: escapeHtml(attendance),
-      guests: escapeHtml(guests),
       phone: escapeHtml(phone || "No proporcionado"),
       email: escapeHtml(email || "No proporcionado"),
       dietary: escapeHtml(dietary || "Ninguna indicada"),
@@ -105,7 +102,6 @@ export async function POST(request: Request) {
         <h1 style="font-size:34px;margin:0 0 24px">${safe.name}</h1>
         <table style="width:100%;border-collapse:collapse">
           <tr><td style="padding:12px;border-bottom:1px solid #ddd"><strong>Asistencia</strong></td><td style="padding:12px;border-bottom:1px solid #ddd">${safe.attendance}</td></tr>
-          <tr><td style="padding:12px;border-bottom:1px solid #ddd"><strong>Asistentes</strong></td><td style="padding:12px;border-bottom:1px solid #ddd">${safe.guests}</td></tr>
           <tr><td style="padding:12px;border-bottom:1px solid #ddd"><strong>Teléfono</strong></td><td style="padding:12px;border-bottom:1px solid #ddd">${safe.phone}</td></tr>
           <tr><td style="padding:12px;border-bottom:1px solid #ddd"><strong>Correo</strong></td><td style="padding:12px;border-bottom:1px solid #ddd">${safe.email}</td></tr>
           <tr><td style="padding:12px;border-bottom:1px solid #ddd"><strong>Alimentación</strong></td><td style="padding:12px;border-bottom:1px solid #ddd">${safe.dietary}</td></tr>
@@ -129,7 +125,7 @@ export async function POST(request: Request) {
             <p style="color:#762c47;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Israel & Liz · 20 de febrero de 2027</p>
             <h1 style="font-size:34px">Gracias, ${safe.name}.</h1>
             <p style="font-size:17px;line-height:1.6">Recibimos tu respuesta: <strong>${safe.attendance}</strong>.</p>
-            <p style="font-size:17px;line-height:1.6">Guardamos ${safe.guests} lugar(es) en tu confirmación.</p>
+            <p style="font-size:17px;line-height:1.6">Gracias por tomarte un momento para confirmarnos.</p>
           </div>
         `,
       });
