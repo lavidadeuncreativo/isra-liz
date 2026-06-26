@@ -119,10 +119,10 @@ export async function POST(request: Request) {
     if (email) {
       await sendEmail({
         to: email,
-        subject: "Recibimos tu confirmación · Israel & Liz",
+        subject: "Recibimos tu confirmacion · Isra&Liz",
         html: `
           <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;color:#201b1d">
-            <p style="color:#762c47;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Israel & Liz · 20 de febrero de 2027</p>
+            <p style="color:#762c47;font-weight:700;letter-spacing:.08em;text-transform:uppercase">Isra&Liz · 20 de febrero de 2027</p>
             <h1 style="font-size:34px">Gracias, ${safe.name}.</h1>
             <p style="font-size:17px;line-height:1.6">Recibimos tu respuesta: <strong>${safe.attendance}</strong>.</p>
             <p style="font-size:17px;line-height:1.6">Gracias por tomarte un momento para confirmarnos.</p>

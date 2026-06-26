@@ -108,20 +108,21 @@ Completa:
 ```env
 RESEND_API_KEY=re_...
 RSVP_TO_EMAIL=tu-correo@dominio.com
-RSVP_FROM_EMAIL=Invitación Israel y Liz <invitacion@tu-dominio.com>
+RSVP_FROM_EMAIL=Invitacion Isra&Liz <invitacion@tu-dominio.com>
 ```
 
 En producción necesitas verificar el dominio remitente en Resend.
 
 ## 6. Activar regalos
 
-Agrega un enlace externo de Mercado Pago, PayPal u otra plataforma:
+Si quieres activar las mesas externas, agrega sus ligas:
 
 ```env
-NEXT_PUBLIC_GIFT_LINK=https://...
+NEXT_PUBLIC_PALACIO_GIFT_LINK=https://...
+NEXT_PUBLIC_AMAZON_GIFT_LINK=https://...
 ```
 
-La web no recibe ni procesa datos de tarjetas.
+La aportacion libre se registra por correo y no procesa datos de tarjetas en el sitio.
 
 ## 7. Publicar en GitHub
 

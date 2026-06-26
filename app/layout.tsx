@@ -2,16 +2,16 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Israel & Liz · Nos casamos",
-  description: "Invitación de boda de Israel y Liz · 20 de febrero de 2027 · Uruapan, Michoacán.",
+  title: "Isra&Liz · Nos casamos",
+  description: "Invitacion de boda de Isra&Liz · 20 de febrero de 2027 · Uruapan, Michoacan.",
   robots: {
     index: false,
     follow: false,
     googleBot: { index: false, follow: false },
   },
   openGraph: {
-    title: "Israel & Liz · Nos casamos",
-    description: "20 de febrero de 2027 · Salón Presidente · Uruapan, Michoacán.",
+    title: "Isra&Liz · Nos casamos",
+    description: "20 de febrero de 2027 · Salon Presidente · Uruapan, Michoacan.",
     type: "website",
   },
 };

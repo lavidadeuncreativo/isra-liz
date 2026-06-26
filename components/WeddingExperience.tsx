@@ -8,6 +8,7 @@ import type { WeddingData } from "@/data/wedding";
 
 type Props = { data: WeddingData };
 type SubmitState = "idle" | "loading" | "success" | "error";
+type GiftModalMode = "info" | "contribution" | null;
 
 const QUICK_LINKS = [
   { href: "#historia", label: "Historia" },
@@ -17,54 +18,148 @@ const QUICK_LINKS = [
   { href: "#faq", label: "FAQ" },
 ] as const;
 
-function Words({ text, className = "" }: { text: string; className?: string }) {
+function WordPieces({ text }: { text: string }) {
   const words = text.trim().split(/\s+/);
+
   return (
-    <span className={className} aria-label={text}>
+    <>
       {words.map((word, index) => (
         <Fragment key={`${word}-${index}`}>
           <span className="reveal-word" aria-hidden="true">{word}</span>
           {index < words.length - 1 ? " " : null}
         </Fragment>
       ))}
+    </>
+  );
+}
+
+function Words({ text, className = "" }: { text: string; className?: string }) {
+  return (
+    <span className={className} aria-label={text}>
+      <WordPieces text={text} />
+    </span>
+  );
+}
+
+function LineWords({ lines, className = "" }: { lines: readonly string[]; className?: string }) {
+  return (
+    <span className={className} aria-label={lines.join(" ")}>
+      {lines.map((line, index) => (
+        <span className="title-line" key={`${line}-${index}`} aria-hidden="true">
+          <WordPieces text={line} />
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function CoupleWordmark({
+  first,
+  second,
+  className = "",
+}: {
+  first: string;
+  second: string;
+  className?: string;
+}) {
+  return (
+    <span className={`couple-wordmark ${className}`.trim()} aria-label={`${first}&${second}`}>
+      <span className="reveal-word" aria-hidden="true">{first}</span>
+      <span className="reveal-word ampersand" aria-hidden="true">&</span>
+      <span className="reveal-word" aria-hidden="true">{second}</span>
     </span>
   );
 }
 
 function isPlaceholderText(value: string) {
-  return /nombre del|nombre de la|pr[oó]ximamente|por confirmar|pendiente/i.test(value);
+  return /nombre del|nombre de la|proximamente|por confirmar|pendiente/i.test(value);
 }
 
 function getVisibleNames(names: readonly string[]) {
   return names.filter((name) => !isPlaceholderText(name));
 }
 
-function getCountdown(dateIso: string) {
-  const weddingDate = new Date(`${dateIso}T00:00:00`);
-  const now = new Date();
-  const diff = weddingDate.getTime() - now.getTime();
+function addMonthsClamped(baseDate: Date, months: number) {
+  const nextDate = new Date(baseDate);
+  const originalDay = nextDate.getDate();
 
-  if (diff <= 0) {
+  nextDate.setMonth(nextDate.getMonth() + months, 1);
+  const lastDay = new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate();
+  nextDate.setDate(Math.min(originalDay, lastDay));
+
+  return nextDate;
+}
+
+function formatUnit(value: number) {
+  return String(Math.max(0, value)).padStart(2, "0");
+}
+
+function formatAmount(value: number) {
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function getCountdown(targetIso: string, nowMs: number) {
+  const targetDate = new Date(targetIso);
+  const nowDate = new Date(nowMs);
+
+  if (Number.isNaN(targetDate.getTime())) {
     return {
-      value: "Es hoy",
-      label: "Llegó el gran día",
-      kicker: "La cuenta regresiva terminó",
+      done: false,
+      units: [
+        { label: "Meses", value: "00" },
+        { label: "Dias", value: "00" },
+        { label: "Horas", value: "00" },
+        { label: "Min", value: "00" },
+        { label: "Seg", value: "00" },
+      ],
     };
   }
 
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-  if (days === 1) {
+  if (targetDate.getTime() <= nowMs) {
     return {
-      value: "1",
-      label: "día para celebrar",
-      kicker: "Falta muy poquito",
+      done: true,
+      units: [
+        { label: "Meses", value: "00" },
+        { label: "Dias", value: "00" },
+        { label: "Horas", value: "00" },
+        { label: "Min", value: "00" },
+        { label: "Seg", value: "00" },
+      ],
     };
   }
+
+  let months = (targetDate.getFullYear() - nowDate.getFullYear()) * 12 + (targetDate.getMonth() - nowDate.getMonth());
+  let cursor = addMonthsClamped(nowDate, months);
+  if (cursor.getTime() > targetDate.getTime()) {
+    months -= 1;
+    cursor = addMonthsClamped(nowDate, months);
+  }
+
+  let remaining = targetDate.getTime() - cursor.getTime();
+  const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
+  remaining -= days * 1000 * 60 * 60 * 24;
+
+  const hours = Math.floor(remaining / (1000 * 60 * 60));
+  remaining -= hours * 1000 * 60 * 60;
+
+  const minutes = Math.floor(remaining / (1000 * 60));
+  remaining -= minutes * 1000 * 60;
+
+  const seconds = Math.floor(remaining / 1000);
 
   return {
-    value: `${days}`,
-    label: "días para celebrar",
-    kicker: "La cuenta regresiva sigue",
+    done: false,
+    units: [
+      { label: "Meses", value: formatUnit(months) },
+      { label: "Dias", value: formatUnit(days) },
+      { label: "Horas", value: formatUnit(hours) },
+      { label: "Min", value: formatUnit(minutes) },
+      { label: "Seg", value: formatUnit(seconds) },
+    ],
   };
 }
 
@@ -113,6 +208,8 @@ type ScrubRevealOptions = {
   fromBlur?: number;
   fromScale?: number;
   fromY?: number;
+  fromRotateX?: number;
+  fromSkewY?: number;
   outBlur?: number;
   outOpacity?: number;
   outScale?: number;
@@ -126,18 +223,32 @@ export default function WeddingExperience({ data }: Props) {
   const [entered, setEntered] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [attendance, setAttendance] = useState("");
-  const [giftOpen, setGiftOpen] = useState(false);
+  const [giftModal, setGiftModal] = useState<GiftModalMode>(null);
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitMessage, setSubmitMessage] = useState("");
+  const [giftState, setGiftState] = useState<SubmitState>("idle");
+  const [giftMessage, setGiftMessage] = useState("");
+  const [now, setNow] = useState(() => Date.now());
+  const [giftAmount, setGiftAmount] = useState<number>(data.gifting.amounts[1] ?? data.gifting.amounts[0] ?? 500);
 
   useEffect(() => {
-    document.documentElement.classList.toggle("page-locked", !entered);
-    document.body.classList.toggle("page-locked", !entered);
+    document.documentElement.classList.toggle("page-locked", !entered || giftModal !== null);
+    document.body.classList.toggle("page-locked", !entered || giftModal !== null);
 
     return () => {
       document.documentElement.classList.remove("page-locked");
       document.body.classList.remove("page-locked");
     };
+  }, [entered, giftModal]);
+
+  useEffect(() => {
+    if (!entered) return;
+
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(timer);
   }, [entered]);
 
   useLayoutEffect(() => {
@@ -155,7 +266,6 @@ export default function WeddingExperience({ data }: Props) {
             ".reveal-support",
             ".reveal-media",
             "[data-reveal-item]",
-            "[data-gallery-item]",
           ],
           {
             clearProps: "all",
@@ -173,9 +283,9 @@ export default function WeddingExperience({ data }: Props) {
         const timeline = gsap.timeline({
           scrollTrigger: {
             trigger,
-            start: "top 82%",
+            start: "top 84%",
             end: options.end ?? "bottom 18%",
-            scrub: 0.9,
+            scrub: 0.95,
             invalidateOnRefresh: true,
           },
         });
@@ -186,33 +296,38 @@ export default function WeddingExperience({ data }: Props) {
             {
               opacity: 0,
               filter: `blur(${options.fromBlur ?? 18}px)`,
-              y: options.fromY ?? 44,
-              scale: options.fromScale ?? 0.98,
+              y: options.fromY ?? 42,
+              scale: options.fromScale ?? 0.975,
+              rotateX: options.fromRotateX ?? 58,
+              skewY: options.fromSkewY ?? 1.5,
+              transformOrigin: "50% 100%",
             },
             {
               opacity: 1,
               filter: "blur(0px)",
               y: 0,
               scale: 1,
+              rotateX: 0,
+              skewY: 0,
               duration: 0.34,
-              stagger: options.stagger ?? 0.07,
+              stagger: options.stagger ?? 0.06,
               ease: "none",
             },
             0,
           )
-          .to({}, { duration: options.hold ?? 0.28 })
+          .to({}, { duration: options.hold ?? 0.22 })
           .to(
             nodes,
             {
-              opacity: options.outOpacity ?? 0.12,
+              opacity: options.outOpacity ?? 0.1,
               filter: `blur(${options.outBlur ?? 18}px)`,
-              y: options.outY ?? -30,
-              scale: options.outScale ?? 0.98,
-              duration: 0.3,
-              stagger: 0.04,
+              y: options.outY ?? -24,
+              scale: options.outScale ?? 0.985,
+              duration: 0.28,
+              stagger: 0.035,
               ease: "none",
             },
-            0.7,
+            0.72,
           );
       };
 
@@ -238,16 +353,16 @@ export default function WeddingExperience({ data }: Props) {
           const introWords = intro ? Array.from(intro.querySelectorAll<HTMLElement>(".reveal-word")) : [];
           const introSupport = intro ? Array.from(intro.querySelectorAll<HTMLElement>(".reveal-support")) : [];
           const headLiz = intro?.querySelector<HTMLElement>("[data-head-liz]");
-          const headIsrael = intro?.querySelector<HTMLElement>("[data-head-israel]");
+          const headIsra = intro?.querySelector<HTMLElement>("[data-head-isra]");
           const heart = intro?.querySelector<HTMLElement>("[data-heart]");
 
-          if (intro && introWords.length && headLiz && headIsrael && heart) {
+          if (intro && introWords.length && headLiz && headIsra && heart) {
             const introTimeline = gsap.timeline({
               scrollTrigger: {
                 trigger: intro,
                 start: "top top",
                 end: "bottom bottom",
-                scrub: 0.9,
+                scrub: 0.95,
                 invalidateOnRefresh: true,
               },
             });
@@ -255,42 +370,58 @@ export default function WeddingExperience({ data }: Props) {
             introTimeline
               .fromTo(
                 introSupport,
-                { opacity: 0, filter: "blur(18px)", y: 26 },
-                { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.18, stagger: 0.05, ease: "none" },
+                { opacity: 0, filter: "blur(16px)", y: 22 },
+                { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.16, stagger: 0.05, ease: "none" },
                 0,
               )
               .fromTo(
                 introWords,
-                { opacity: 0, filter: "blur(24px)", y: 76, rotateX: 74, transformOrigin: "50% 100%" },
-                { opacity: 1, filter: "blur(0px)", y: 0, rotateX: 0, duration: 0.32, stagger: 0.018, ease: "none" },
+                {
+                  opacity: 0,
+                  filter: "blur(24px)",
+                  y: 70,
+                  rotateX: 78,
+                  skewY: 2,
+                  transformOrigin: "50% 100%",
+                },
+                {
+                  opacity: 1,
+                  filter: "blur(0px)",
+                  y: 0,
+                  rotateX: 0,
+                  skewY: 0,
+                  duration: 0.34,
+                  stagger: 0.02,
+                  ease: "none",
+                },
                 0.04,
               )
               .fromTo(
-                [headLiz, headIsrael],
-                { opacity: 0, filter: "blur(22px)", y: 64, scale: 0.78 },
-                { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, duration: 0.24, stagger: 0.05, ease: "none" },
-                0.12,
+                [headLiz, headIsra],
+                { opacity: 0, filter: "blur(18px)", y: 54, scale: 0.84 },
+                { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, duration: 0.22, stagger: 0.06, ease: "none" },
+                0.14,
               )
               .fromTo(
                 heart,
-                { opacity: 0, filter: "blur(18px)", y: 26, scale: 0.58 },
-                { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, duration: 0.18, ease: "none" },
-                0.22,
+                { opacity: 0, filter: "blur(14px)", y: 18, scale: 0.72 },
+                { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, duration: 0.16, ease: "none" },
+                0.2,
               )
-              .to(headLiz, { x: conditions.mobile ? -20 : -58, y: 12, rotation: -7, duration: 0.18, ease: "none" }, 0.48)
-              .to(headIsrael, { x: conditions.mobile ? 20 : 58, y: 12, rotation: 7, duration: 0.18, ease: "none" }, 0.48)
-              .to(heart, { y: -8, scale: 1.04, duration: 0.12, ease: "none" }, 0.52)
+              .to(headLiz, { x: conditions.mobile ? -8 : -26, y: conditions.mobile ? -8 : -12, rotation: -5, duration: 0.22, ease: "none" }, 0.48)
+              .to(headIsra, { x: conditions.mobile ? 8 : 26, y: conditions.mobile ? -8 : -12, rotation: 5, duration: 0.22, ease: "none" }, 0.48)
+              .to(heart, { y: -10, scale: 1.05, duration: 0.16, ease: "none" }, 0.54)
               .to(
-                [introWords, introSupport, headLiz, headIsrael, heart],
+                [introWords, introSupport, headLiz, headIsra, heart],
                 {
                   opacity: 0.08,
                   filter: "blur(18px)",
-                  y: -46,
+                  y: -36,
                   duration: 0.28,
                   stagger: 0.005,
                   ease: "none",
                 },
-                0.74,
+                0.78,
               );
           }
 
@@ -305,7 +436,7 @@ export default function WeddingExperience({ data }: Props) {
                 trigger: scene,
                 start: "top top",
                 end: "bottom bottom",
-                scrub: 0.9,
+                scrub: 0.95,
                 invalidateOnRefresh: true,
               },
             });
@@ -313,76 +444,31 @@ export default function WeddingExperience({ data }: Props) {
             timeline
               .fromTo(
                 support,
-                { opacity: 0, filter: "blur(16px)", y: 22 },
-                { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.18, stagger: 0.04, ease: "none" },
+                { opacity: 0, filter: "blur(14px)", y: 20 },
+                { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.16, stagger: 0.04, ease: "none" },
                 0,
               )
               .fromTo(
                 words,
-                { opacity: 0, filter: "blur(24px)", y: 70, rotateX: 68, transformOrigin: "50% 100%" },
-                { opacity: 1, filter: "blur(0px)", y: 0, rotateX: 0, duration: 0.34, stagger: 0.014, ease: "none" },
+                { opacity: 0, filter: "blur(24px)", y: 68, rotateX: 74, skewY: 1.8, transformOrigin: "50% 100%" },
+                { opacity: 1, filter: "blur(0px)", y: 0, rotateX: 0, skewY: 0, duration: 0.32, stagger: 0.014, ease: "none" },
                 0.04,
               )
               .fromTo(
                 media,
-                { opacity: 0, filter: "blur(22px)", y: 44, scale: 0.9, rotation: index % 2 ? 4 : -4 },
-                { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, rotation: index % 2 ? 1.4 : -1.4, duration: 0.3, ease: "none" },
+                { opacity: 0, filter: "blur(18px)", y: 36, scale: 0.94, rotation: index % 2 ? 3 : -3 },
+                { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, rotation: index % 2 ? 1 : -1, duration: 0.26, ease: "none" },
                 0.12,
               )
               .to({}, { duration: 0.18 })
-              .to(words, { opacity: 0.08, filter: "blur(18px)", y: -42, duration: 0.24, stagger: 0.006, ease: "none" }, 0.74)
-              .to(support, { opacity: 0.1, filter: "blur(14px)", y: -24, duration: 0.18, ease: "none" }, 0.76)
-              .to(media, { opacity: 0.08, filter: "blur(20px)", y: -28, scale: 0.96, duration: 0.22, ease: "none" }, 0.74);
+              .to(words, { opacity: 0.08, filter: "blur(18px)", y: -34, duration: 0.22, stagger: 0.006, ease: "none" }, 0.74)
+              .to(support, { opacity: 0.1, filter: "blur(14px)", y: -18, duration: 0.16, ease: "none" }, 0.76)
+              .to(media, { opacity: 0.08, filter: "blur(18px)", y: -20, scale: 0.975, duration: 0.2, ease: "none" }, 0.74);
           });
 
           gsap.utils.toArray<HTMLElement>("[data-reveal-section]").forEach((section) => {
             const children = section.querySelectorAll<HTMLElement>("[data-reveal-item]");
             createScrubReveal(section, children);
-          });
-
-          gsap.utils.toArray<HTMLElement>("[data-gallery-item]").forEach((item, index) => {
-            const timeline = gsap.timeline({
-              scrollTrigger: {
-                trigger: item,
-                start: "top 88%",
-                end: "bottom 16%",
-                scrub: 0.9,
-                invalidateOnRefresh: true,
-              },
-            });
-
-            timeline
-              .fromTo(
-                item,
-                {
-                  opacity: 0,
-                  filter: "blur(22px)",
-                  y: 70,
-                  scale: 0.92,
-                  rotation: index % 2 ? 4 : -4,
-                },
-                {
-                  opacity: 1,
-                  filter: "blur(0px)",
-                  y: 0,
-                  scale: 1,
-                  rotation: index % 2 ? 1.2 : -1.2,
-                  duration: 0.4,
-                  ease: "none",
-                },
-              )
-              .to({}, { duration: 0.2 })
-              .to(
-                item,
-                {
-                  opacity: 0.12,
-                  filter: "blur(18px)",
-                  y: -36,
-                  scale: 0.97,
-                  duration: 0.4,
-                  ease: "none",
-                },
-              );
           });
 
           ScrollTrigger.refresh();
@@ -439,52 +525,97 @@ export default function WeddingExperience({ data }: Props) {
         body: JSON.stringify(payload),
       });
       const result = (await response.json()) as { ok?: boolean; message?: string };
-      if (!response.ok || !result.ok) throw new Error(result.message || "No pudimos enviar tu confirmación.");
+      if (!response.ok || !result.ok) throw new Error(result.message || "No pudimos enviar tu confirmacion.");
       form.reset();
       setAttendance("");
       setSubmitState("success");
-      setSubmitMessage(result.message || "Tu confirmación quedó registrada. Gracias.");
+      setSubmitMessage(result.message || "Tu confirmacion quedo registrada. Gracias.");
     } catch (error) {
       setSubmitState("error");
-      setSubmitMessage(error instanceof Error ? error.message : "Ocurrió un error. Intenta nuevamente.");
+      setSubmitMessage(error instanceof Error ? error.message : "Ocurrio un error. Intenta nuevamente.");
     }
   }
 
-  const giftLink = process.env.NEXT_PUBLIC_GIFT_LINK?.trim() || "";
-  const hasGiftLink = Boolean(giftLink);
-  const hasMap = Boolean(data.venue.mapUrl && data.venue.mapUrl !== "#");
-  const countdown = getCountdown(data.date.iso);
+  async function submitGift(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setGiftState("loading");
+    setGiftMessage("");
+
+    const form = event.currentTarget;
+    const payload = Object.fromEntries(new FormData(form).entries());
+
+    try {
+      const response = await fetch("/api/gifts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const result = (await response.json()) as { ok?: boolean; message?: string };
+      if (!response.ok || !result.ok) throw new Error(result.message || "No pudimos registrar tu detalle.");
+      form.reset();
+      setGiftState("success");
+      setGiftMessage(result.message || data.gifting.contributionSuccess);
+    } catch (error) {
+      setGiftState("error");
+      setGiftMessage(error instanceof Error ? error.message : "Ocurrio un error. Intenta nuevamente.");
+    }
+  }
+
+  const countdown = getCountdown(data.date.countdownIso, now);
   const lizParents = getVisibleNames(data.parents.liz);
-  const israelParents = getVisibleNames(data.parents.israel);
-  const isNotAttending = attendance === "No podré asistir";
+  const israParents = getVisibleNames(data.parents.israel);
+  const isNotAttending = attendance === "No podre asistir";
+  const hasMap = Boolean(data.venue.mapUrl);
+
+  const registryLinks = data.gifting.registries.map((registry) => {
+    if (registry.label === "Palacio de Hierro") {
+      return {
+        ...registry,
+        href: process.env.NEXT_PUBLIC_PALACIO_GIFT_LINK?.trim() || registry.href,
+      };
+    }
+
+    if (registry.label === "Amazon") {
+      return {
+        ...registry,
+        href: process.env.NEXT_PUBLIC_AMAZON_GIFT_LINK?.trim() || registry.href,
+      };
+    }
+
+    return registry;
+  });
 
   return (
     <main ref={rootRef} className={`wedding-site ${entered ? "entered" : ""}`}>
       <audio ref={audioRef} src={data.audio.src} preload="metadata" onEnded={() => setAudioEnabled(false)} />
 
-      <div className={`entry-screen ${entered ? "is-hidden" : ""}`} role="dialog" aria-modal="true" aria-label="Abrir invitación">
+      <div className={`entry-screen ${entered ? "is-hidden" : ""}`} role="dialog" aria-modal="true" aria-label="Abrir invitacion">
         <div className="paper-noise" aria-hidden="true" />
         <div className="entry-content">
           <p className="eyebrow">Tenemos algo que contarte</p>
-          <h1>{data.couple.partnerOne} <em>&amp;</em> {data.couple.partnerTwo}</h1>
+          <h1>
+            <span>{data.couple.partnerOne}</span>
+            <em>&</em>
+            <span>{data.couple.partnerTwo}</span>
+          </h1>
           <p className="entry-date">{data.date.short}</p>
           <div className="entry-actions">
             <button type="button" className="button button-primary" onClick={() => enter(true)}>Entrar con audio</button>
             <button type="button" className="button button-secondary" onClick={() => enter(false)}>Continuar sin audio</button>
           </div>
-          <p className="entry-note">La experiencia está pensada para recorrerse despacio. Tú decides el ritmo con el scroll.</p>
+          <p className="entry-note">{data.intro.entryNote}</p>
         </div>
       </div>
 
       {entered && (
         <button type="button" className="audio-control" onClick={toggleAudio} aria-pressed={audioEnabled}>
-          <span className="audio-dot">{audioEnabled ? "Ⅱ" : "▶"}</span>
+          <span className="audio-dot">{audioEnabled ? "II" : ">"}</span>
           <span>{audioEnabled ? "Pausar historia" : "Escuchar historia"}</span>
         </button>
       )}
 
       {entered && (
-        <nav className="quick-nav" aria-label="Atajos de la invitación">
+        <nav className="quick-nav" aria-label="Atajos de la invitacion">
           {QUICK_LINKS.map((link) => (
             <a key={link.href} href={link.href}>
               {link.label}
@@ -499,19 +630,21 @@ export default function WeddingExperience({ data }: Props) {
           <div className="intro-shell">
             <div className="intro-copy">
               <p className="kicker reveal-support">{data.intro.kicker}</p>
-              <h2 className="intro-title"><Words text={data.intro.title} /></h2>
+              <h2 className="intro-title">
+                <LineWords lines={data.intro.titleLines} />
+              </h2>
               <p className="intro-lead reveal-support">{data.intro.body}</p>
             </div>
 
             <div className="intro-portraits">
-              <figure className="intro-portrait" data-head-liz>
+              <figure className="intro-portrait intro-portrait-liz" data-head-liz>
                 <div className="intro-portrait-art">
                   <span className="portrait-halo" aria-hidden="true" />
                   <Image
                     src="/images/hero-liz.png"
-                    alt="Liz de niña"
+                    alt="Liz de nina"
                     fill
-                    sizes="(max-width: 820px) 32vw, 240px"
+                    sizes="(max-width: 820px) 34vw, 250px"
                     priority
                     className="cutout-image"
                   />
@@ -524,19 +657,19 @@ export default function WeddingExperience({ data }: Props) {
                 <small>{data.date.short}</small>
               </div>
 
-              <figure className="intro-portrait" data-head-israel>
+              <figure className="intro-portrait intro-portrait-isra" data-head-isra>
                 <div className="intro-portrait-art">
                   <span className="portrait-halo" aria-hidden="true" />
                   <Image
                     src="/images/hero-israel.png"
-                    alt="Israel de niño"
+                    alt="Isra de nino"
                     fill
-                    sizes="(max-width: 820px) 32vw, 240px"
+                    sizes="(max-width: 820px) 34vw, 250px"
                     priority
                     className="cutout-image"
                   />
                 </div>
-                <figcaption>Israel</figcaption>
+                <figcaption>Isra</figcaption>
               </figure>
             </div>
 
@@ -565,34 +698,38 @@ export default function WeddingExperience({ data }: Props) {
       <section className="invite-scene story-scene" data-story-scene data-scene-index={data.story.length + 1}>
         <div className="scene-stage invite-stage">
           <p className="kicker reveal-support">Guarda la fecha</p>
-          <h2 className="couple-title"><Words text={`${data.couple.partnerOne} & ${data.couple.partnerTwo}`} /></h2>
-          <div className="countdown-panel reveal-support">
-            <span>{countdown.kicker}</span>
-            <strong>{countdown.value}</strong>
-            <p>{countdown.label}</p>
+          <h2 className="couple-title"><CoupleWordmark first={data.couple.partnerOne} second={data.couple.partnerTwo} /></h2>
+          <p className="invite-date reveal-support">{data.date.display}</p>
+          <p className="invite-place reveal-support">{data.venue.name} · {data.venue.city}</p>
+
+          <div className="countdown-panel reveal-support" data-reveal-item>
+            <span className="countdown-kicker">{countdown.done ? "Hoy celebramos" : "Cuenta regresiva"}</span>
+            <div className="countdown-grid">
+              {countdown.units.map((unit) => (
+                <div className="countdown-unit" key={unit.label}>
+                  <strong>{unit.value}</strong>
+                  <small>{unit.label}</small>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="invite-strip reveal-media">
-            <div>{data.date.display}</div>
-            <div>{data.venue.name}<br />{data.venue.city}</div>
-          </div>
+
           <div className="invite-actions reveal-support">
-            <a className="button button-primary" href="#detalles">Ver todos los detalles</a>
+            <a className="button button-primary" href="#detalles">Ver itinerario</a>
             <a className="button button-secondary" href="#rsvp">Confirmar asistencia</a>
             {hasMap ? (
               <a className="button button-secondary" href={data.venue.mapUrl} target="_blank" rel="noreferrer">
-                Ver ubicación
+                Abrir ubicacion
               </a>
-            ) : (
-              <span className="pill-note">La ubicación exacta aparecerá aquí muy pronto.</span>
-            )}
+            ) : null}
           </div>
         </div>
       </section>
 
       <section className="content-section family-section" data-reveal-section>
         <div className="section-heading" data-reveal-item>
-          <p className="eyebrow">Con la alegría de nuestras familias</p>
-          <h2>Nos acompañan en este día.</h2>
+          <p className="eyebrow">Con la alegria de nuestras familias</p>
+          <h2>Nos acompanan en este dia.</h2>
         </div>
         <div className="family-grid">
           <article className="family-card" data-reveal-item>
@@ -600,15 +737,15 @@ export default function WeddingExperience({ data }: Props) {
             {lizParents.length ? (
               lizParents.map((name) => <h3 key={name}>{name}</h3>)
             ) : (
-              <p className="family-placeholder">Muy pronto compartiremos los nombres que nos acompañarán en este momento tan especial.</p>
+              <p className="family-placeholder">Muy pronto compartiremos los nombres que nos acompanaran en este momento tan especial.</p>
             )}
           </article>
           <article className="family-card" data-reveal-item>
-            <span>Familia de Israel</span>
-            {israelParents.length ? (
-              israelParents.map((name) => <h3 key={name}>{name}</h3>)
+            <span>Familia de Isra</span>
+            {israParents.length ? (
+              israParents.map((name) => <h3 key={name}>{name}</h3>)
             ) : (
-              <p className="family-placeholder">Muy pronto compartiremos los nombres que nos acompañarán en este momento tan especial.</p>
+              <p className="family-placeholder">Muy pronto compartiremos los nombres que nos acompanaran en este momento tan especial.</p>
             )}
           </article>
         </div>
@@ -618,37 +755,48 @@ export default function WeddingExperience({ data }: Props) {
         <div className="section-heading" data-reveal-item>
           <p className="eyebrow">Lo que hemos vivido</p>
           <h2>Una historia hecha de muchos momentos.</h2>
-          <p>Un pequeño recorrido por los recuerdos que nos han traído hasta aquí.</p>
+          <p>Un recorrido de recuerdos que sigue avanzando, igual que nosotros.</p>
         </div>
-        <div className="gallery-grid">
-          {data.gallery.map((item, index) => (
-            <figure className={`gallery-item gallery-item-${index + 1}`} key={item.src} data-gallery-item>
-              <div className="gallery-image"><Image src={item.src} alt={item.alt} fill sizes="(max-width: 820px) 92vw, 46vw" /></div>
-              <figcaption>{item.caption}</figcaption>
-            </figure>
-          ))}
+        <div className="gallery-marquee" data-reveal-item>
+          <div className="gallery-track">
+            {[...data.gallery, ...data.gallery].map((item, index) => (
+              <figure className="gallery-slide" key={`${item.src}-${index}`} aria-hidden={index >= data.gallery.length}>
+                <div className="gallery-image">
+                  <Image src={item.src} alt={item.alt} fill sizes="(max-width: 820px) 72vw, 360px" />
+                </div>
+                <figcaption>{item.caption}</figcaption>
+              </figure>
+            ))}
+          </div>
         </div>
       </section>
 
       <section id="detalles" className="content-section details-section" data-reveal-section>
         <div className="section-heading" data-reveal-item>
-          <p className="eyebrow">El gran día</p>
-          <h2>{data.date.display}.</h2>
+          <p className="eyebrow">Asi se vivira el dia</p>
+          <h2>Itinerario</h2>
+          <p>Todo lo importante, en un vistazo para que te sea facil ubicarte.</p>
         </div>
-        <div className="date-lockup" data-reveal-item>
-          <strong>{data.date.day}</strong>
-          <span>{data.date.month}<br />{data.date.year}</span>
-        </div>
-        <div className="details-grid">
-          <article className="detail-card" data-reveal-item><small>La ceremonia</small><h3>{data.date.ceremonyTime}</h3><p>Te recomendamos llegar 30 minutos antes para comenzar puntualmente.</p></article>
-          <article className="detail-card" data-reveal-item><small>El lugar</small><h3>{data.venue.name}</h3><p>{data.venue.city}</p>{hasMap ? <a href={data.venue.mapUrl} target="_blank" rel="noreferrer">Abrir ubicación ↗</a> : <p className="detail-muted">Compartiremos la ubicación exacta en cuanto esté confirmada.</p>}</article>
-          <article className="detail-card" data-reveal-item><small>Código de vestimenta</small><h3>Formal</h3><p>Elegante, cómodo y listo para bailar toda la noche.</p></article>
-          <article className="detail-card" data-reveal-item><small>Hospedaje</small><h3>Uruapan</h3><p>Muy pronto compartiremos hoteles recomendados y opciones de transporte para quienes nos acompañan desde fuera.</p></article>
+        <div className="details-grid details-grid-compact">
+          {data.essentials.map((item) => (
+            <article className="detail-card" data-reveal-item key={item.label}>
+              <small>{item.label}</small>
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+              {"href" in item && item.href ? (
+                <a href={item.href} target="_blank" rel="noreferrer">{"actionLabel" in item && item.actionLabel ? item.actionLabel : "Abrir"}</a>
+              ) : null}
+            </article>
+          ))}
         </div>
         <div className="schedule" data-reveal-item>
           {data.schedule.map((item) => (
-            <div className="schedule-row" key={item.time}>
-              <time>{item.time}</time><div><h3>{item.title}</h3><p>{item.note}</p></div>
+            <div className="schedule-row" key={`${item.time}-${item.title}`}>
+              <time>{item.time}</time>
+              <div>
+                <h3>{item.title}</h3>
+                <p>{item.note}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -658,23 +806,23 @@ export default function WeddingExperience({ data }: Props) {
         <div className="section-heading" data-reveal-item>
           <p className="eyebrow">Confirma tu asistencia</p>
           <h2>Queremos contar contigo.</h2>
-          <p>Nos ayudará muchísimo que respondas con tiempo para organizar cada detalle con cariño.</p>
+          <p>Nos ayudara muchisimo que respondas con tiempo para organizar cada detalle con carino.</p>
         </div>
         <form className="rsvp-form" onSubmit={submitRsvp} data-reveal-item>
           <input className="honeypot" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true" />
           <label>Nombre completo<input name="name" required maxLength={120} /></label>
           <fieldset>
-            <legend>¿Podrás acompañarnos?</legend>
-            <label className="radio-label"><input type="radio" name="attendance" value="Sí asistiré" checked={attendance === "Sí asistiré"} onChange={(event) => setAttendance(event.target.value)} required /> Sí, ahí estaré</label>
-            <label className="radio-label"><input type="radio" name="attendance" value="No podré asistir" checked={attendance === "No podré asistir"} onChange={(event) => setAttendance(event.target.value)} required /> No podré asistir</label>
+            <legend>¿Podras acompanarnos?</legend>
+            <label className="radio-label"><input type="radio" name="attendance" value="Si asistire" checked={attendance === "Si asistire"} onChange={(event) => setAttendance(event.target.value)} required /> Si, ahi estare</label>
+            <label className="radio-label"><input type="radio" name="attendance" value="No podre asistir" checked={attendance === "No podre asistir"} onChange={(event) => setAttendance(event.target.value)} required /> No podre asistir</label>
           </fieldset>
-          {isNotAttending ? <p className="form-helper">Gracias por avisarnos con tiempo. Te vamos a extrañar muchísimo ese día.</p> : <p className="form-helper">Tu invitación ya contempla los lugares reservados especialmente para ti.</p>}
-          <label>Teléfono<input name="phone" inputMode="tel" maxLength={30} /></label>
-          <label>Correo electrónico<input name="email" type="email" maxLength={160} /></label>
+          {isNotAttending ? <p className="form-helper">Gracias por avisarnos con tiempo. Te vamos a extranar muchisimo ese dia.</p> : <p className="form-helper">Tu invitacion ya contempla los lugares reservados especialmente para ti.</p>}
+          <label>Telefono<input name="phone" inputMode="tel" maxLength={30} /></label>
+          <label>Correo electronico<input name="email" type="email" maxLength={160} /></label>
           <label>Alergias o restricciones alimentarias<textarea name="dietary" rows={3} maxLength={500} /></label>
           <label>Mensaje para nosotros<textarea name="message" rows={4} maxLength={1000} /></label>
-          <button className="button button-primary submit-button" type="submit" disabled={submitState === "loading"}>{submitState === "loading" ? "Enviando…" : "Confirmar asistencia"}</button>
-          {submitMessage && <p className={`form-status ${submitState}`} role="status">{submitMessage}</p>}
+          <button className="button button-primary submit-button" type="submit" disabled={submitState === "loading"}>{submitState === "loading" ? "Enviando..." : "Confirmar asistencia"}</button>
+          {submitMessage ? <p className={`form-status ${submitState}`} role="status">{submitMessage}</p> : null}
         </form>
       </section>
 
@@ -685,41 +833,105 @@ export default function WeddingExperience({ data }: Props) {
             <h2>{data.gifting.title}</h2>
             <p>{data.gifting.body}</p>
           </div>
-          <div className="gift-actions-stack">
-            {hasGiftLink ? (
-              <a className="button button-primary" href={giftLink} target="_blank" rel="noreferrer">{data.gifting.cta}</a>
-            ) : (
-              <button className="button button-primary" type="button" onClick={() => setGiftOpen(true)}>{data.gifting.cta}</button>
-            )}
-            <p className="gift-soft-note">{data.gifting.gentleNote}</p>
+
+          <div className="gift-grid">
+            <article className="gift-card gift-card-primary">
+              <span>{data.gifting.contributionTitle}</span>
+              <h3>Elige el monto que te nazca.</h3>
+              <p>{data.gifting.contributionBody}</p>
+              <div className="gift-amounts">
+                {data.gifting.amounts.map((amount) => (
+                  <button
+                    key={amount}
+                    type="button"
+                    className={`gift-chip ${giftAmount === amount ? "is-active" : ""}`}
+                    onClick={() => setGiftAmount(amount)}
+                  >
+                    {formatAmount(amount)}
+                  </button>
+                ))}
+              </div>
+              <button className="button button-primary" type="button" onClick={() => {
+                setGiftState("idle");
+                setGiftMessage("");
+                setGiftModal("contribution");
+              }}>
+                {formatAmount(giftAmount)}
+              </button>
+            </article>
+
+            {registryLinks.map((registry) => (
+              <article className="gift-card" key={registry.label}>
+                <span>{registry.label}</span>
+                <h3>{registry.title}</h3>
+                <p>{registry.body}</p>
+                {registry.href ? (
+                  <a className="button button-secondary" href={registry.href} target="_blank" rel="noreferrer">{registry.cta}</a>
+                ) : (
+                  <button className="button button-secondary" type="button" onClick={() => setGiftModal("info")}>{registry.cta}</button>
+                )}
+              </article>
+            ))}
           </div>
+
+          <p className="gift-soft-note">{data.gifting.gentleNote}</p>
         </div>
       </section>
 
       <section id="faq" className="content-section faq-section" data-reveal-section>
-        <div className="section-heading" data-reveal-item><p className="eyebrow">Preguntas frecuentes</p><h2>Todo lo que necesitas saber.</h2></div>
+        <div className="section-heading" data-reveal-item>
+          <p className="eyebrow">Preguntas frecuentes</p>
+          <h2>Todo lo que necesitas saber.</h2>
+        </div>
         <div className="faq-list">
-          {data.faq.map((item) => <details key={item.question} data-reveal-item><summary>{item.question}<span>+</span></summary><p>{item.answer}</p></details>)}
+          {data.faq.map((item) => (
+            <details key={item.question} data-reveal-item>
+              <summary>{item.question}<span>+</span></summary>
+              <p>{item.answer}</p>
+            </details>
+          ))}
         </div>
       </section>
 
       <footer className="closing-section" data-reveal-section>
         <p data-reveal-item>{data.closing.body}</p>
         <h2 data-reveal-item>{data.closing.title}</h2>
-        <span data-reveal-item>{data.couple.partnerOne} &amp; {data.couple.partnerTwo}</span>
+        <span data-reveal-item>{data.couple.wordmark}</span>
       </footer>
 
-      {giftOpen && (
-        <div className="gift-modal" role="dialog" aria-modal="true" aria-label="Información para regalo">
-          <button className="modal-backdrop" aria-label="Cerrar" onClick={() => setGiftOpen(false)} />
+      {giftModal ? (
+        <div className="gift-modal" role="dialog" aria-modal="true" aria-label="Informacion para regalos">
+          <button className="modal-backdrop" aria-label="Cerrar" onClick={() => setGiftModal(null)} />
           <div className="modal-card">
-            <p className="eyebrow">{data.gifting.eyebrow}</p>
-            <h2>{data.gifting.fallbackTitle}</h2>
-            <p>{data.gifting.fallbackBody}</p>
-            <button className="button button-primary" type="button" onClick={() => setGiftOpen(false)}>Entendido</button>
+            {giftModal === "contribution" ? (
+              <>
+                <p className="eyebrow">{data.gifting.contributionTitle}</p>
+                <h2>{formatAmount(giftAmount)}</h2>
+                <p>Dejanos tus datos y te compartiremos la opcion disponible para hacer esta aportacion con toda confianza.</p>
+                <form className="gift-form" onSubmit={submitGift}>
+                  <input className="honeypot" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true" />
+                  <input type="hidden" name="amount" value={giftAmount} />
+                  <label>Nombre completo<input name="name" required maxLength={120} /></label>
+                  <label>Telefono<input name="phone" inputMode="tel" maxLength={30} /></label>
+                  <label>Correo electronico<input name="email" type="email" maxLength={160} /></label>
+                  <label>Mensaje<textarea name="message" rows={3} maxLength={500} placeholder="Si quieres, puedes dejarnos una nota linda." /></label>
+                  <button className="button button-primary submit-button" type="submit" disabled={giftState === "loading"}>
+                    {giftState === "loading" ? "Enviando..." : data.gifting.contributionCta}
+                  </button>
+                  {giftMessage ? <p className={`form-status ${giftState}`} role="status">{giftMessage}</p> : null}
+                </form>
+              </>
+            ) : (
+              <>
+                <p className="eyebrow">{data.gifting.eyebrow}</p>
+                <h2>{data.gifting.fallbackTitle}</h2>
+                <p>{data.gifting.fallbackBody}</p>
+                <button className="button button-primary" type="button" onClick={() => setGiftModal(null)}>Entendido</button>
+              </>
+            )}
           </div>
         </div>
-      )}
+      ) : null}
     </main>
   );
 }
