@@ -68,24 +68,34 @@ export const wedding = {
   ],
   gallery: [
     {
-      src: "/images/galeria-01.svg",
-      alt: "Un viaje de Isra y Liz",
-      caption: "Los momentos que nos hicieron reir mas de la cuenta.",
+      src: "/images/gallery/momento-01.jpg",
+      alt: "Liz en una noche especial",
+      caption: "Las noches que se quedan guardadas por como se sintieron.",
     },
     {
-      src: "/images/galeria-02.svg",
-      alt: "Una celebracion de Isra y Liz",
-      caption: "Los abrazos, los viajes y las pequenas celebraciones.",
+      src: "/images/gallery/momento-02.jpg",
+      alt: "Anillo de compromiso frente al mar",
+      caption: "El si que empezo a hacerlo todo mas real.",
     },
     {
-      src: "/images/galeria-03.svg",
-      alt: "Una tarde cotidiana de Isra y Liz",
-      caption: "Los dias tranquilos que terminaron siendo nuestros favoritos.",
+      src: "/images/gallery/momento-03.jpg",
+      alt: "Liz sonriendo durante una tarde soleada",
+      caption: "Los dias bonitos, los sencillos y los que nos hicieron sonreir.",
     },
     {
-      src: "/images/galeria-04.svg",
-      alt: "El compromiso de Isra y Liz",
-      caption: "Y el instante en que dijimos si a este para siempre.",
+      src: "/images/gallery/momento-04.jpg",
+      alt: "Isra y Liz abrazados en una celebracion",
+      caption: "Las celebraciones que ya se sienten como casa.",
+    },
+    {
+      src: "/images/gallery/momento-05.jpg",
+      alt: "Isra y Liz abrazados en el jardin",
+      caption: "Ese abrazo donde todo alrededor se vuelve parte del recuerdo.",
+    },
+    {
+      src: "/images/gallery/momento-06.jpg",
+      alt: "Isra y Liz besandose bajo un arco de piedra",
+      caption: "Los viajes, los besos y las ganas de seguir eligiendonos.",
     },
   ],
   essentials: [

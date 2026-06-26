@@ -259,95 +259,72 @@ export default function WeddingExperience({ data }: Props) {
 
     const mm = gsap.matchMedia();
     const ctx = gsap.context(() => {
-      const clearMotion = () => {
-        gsap.set(
-          [
-            ".reveal-word",
-            ".reveal-support",
-            ".reveal-media",
-            "[data-reveal-item]",
-          ],
-          {
-            clearProps: "all",
-            opacity: 1,
-            filter: "none",
-            transform: "none",
-          },
-        );
-      };
-
-      const createScrubReveal = (trigger: HTMLElement, targets: Iterable<HTMLElement>, options: ScrubRevealOptions = {}) => {
+      const createScrubReveal = (targets: Iterable<HTMLElement>, options: ScrubRevealOptions = {}) => {
         const nodes = Array.from(targets).filter(Boolean);
         if (!nodes.length) return;
 
-        const timeline = gsap.timeline({
-          scrollTrigger: {
-            trigger,
-            start: "top 84%",
-            end: options.end ?? "bottom 18%",
-            scrub: 0.95,
-            invalidateOnRefresh: true,
-          },
-        });
+        nodes.forEach((node, index) => {
+          const timeline = gsap.timeline({
+            scrollTrigger: {
+              trigger: node,
+              start: "top 92%",
+              end: options.end ?? "bottom 14%",
+              scrub: 0.85,
+              invalidateOnRefresh: true,
+            },
+          });
 
-        timeline
-          .fromTo(
-            nodes,
-            {
-              opacity: 0,
-              filter: `blur(${options.fromBlur ?? 18}px)`,
-              y: options.fromY ?? 42,
-              scale: options.fromScale ?? 0.975,
-              rotateX: options.fromRotateX ?? 58,
-              skewY: options.fromSkewY ?? 1.5,
-              transformOrigin: "50% 100%",
-            },
-            {
-              opacity: 1,
-              filter: "blur(0px)",
-              y: 0,
-              scale: 1,
-              rotateX: 0,
-              skewY: 0,
-              duration: 0.34,
-              stagger: options.stagger ?? 0.06,
-              ease: "none",
-            },
-            0,
-          )
-          .to({}, { duration: options.hold ?? 0.22 })
-          .to(
-            nodes,
-            {
-              opacity: options.outOpacity ?? 0.1,
-              filter: `blur(${options.outBlur ?? 18}px)`,
-              y: options.outY ?? -24,
-              scale: options.outScale ?? 0.985,
-              duration: 0.28,
-              stagger: 0.035,
-              ease: "none",
-            },
-            0.72,
-          );
+          timeline
+            .fromTo(
+              node,
+              {
+                autoAlpha: 0,
+                filter: `blur(${options.fromBlur ?? 24}px)`,
+                y: options.fromY ?? 56,
+                scale: options.fromScale ?? 0.97,
+                rotateX: options.fromRotateX ?? 54,
+                skewY: options.fromSkewY ?? 1.2,
+                transformOrigin: "50% 100%",
+              },
+              {
+                autoAlpha: 1,
+                filter: "blur(0px)",
+                y: 0,
+                scale: 1,
+                rotateX: 0,
+                skewY: 0,
+                duration: 0.36,
+                delay: (options.stagger ?? 0.025) * index,
+                ease: "none",
+              },
+              0,
+            )
+            .to({}, { duration: options.hold ?? 0.28 })
+            .to(
+              node,
+              {
+                autoAlpha: options.outOpacity ?? 0,
+                filter: `blur(${options.outBlur ?? 22}px)`,
+                y: options.outY ?? -42,
+                scale: options.outScale ?? 0.985,
+                duration: 0.3,
+                ease: "none",
+              },
+              0.72,
+            );
+        });
       };
 
       mm.add(
         {
           desktop: "(min-width: 821px)",
           mobile: "(max-width: 820px)",
-          reduce: "(prefers-reduced-motion: reduce)",
         },
         (context) => {
           const conditions = context.conditions as {
             desktop?: boolean;
             mobile?: boolean;
-            reduce?: boolean;
           };
-
-          if (conditions.reduce) {
-            clearMotion();
-            return;
-          }
 
           const intro = root.querySelector<HTMLElement>("[data-intro-scene]");
           const introWords = intro ? Array.from(intro.querySelectorAll<HTMLElement>(".reveal-word")) : [];
@@ -355,9 +332,20 @@ export default function WeddingExperience({ data }: Props) {
           const headLiz = intro?.querySelector<HTMLElement>("[data-head-liz]");
           const headIsra = intro?.querySelector<HTMLElement>("[data-head-isra]");
           const heart = intro?.querySelector<HTMLElement>("[data-heart]");
-          const orbit = intro?.querySelector<HTMLElement>("[data-hero-orbit]");
+          const floaters = intro?.querySelector<HTMLElement>("[data-hero-floaters]");
 
-          if (intro && introWords.length && headLiz && headIsra && heart) {
+          if (intro && introWords.length && headLiz && headIsra && heart && floaters) {
+            gsap.set(introSupport, { opacity: 0, filter: "blur(16px)", y: 22 });
+            gsap.set(introWords, {
+              opacity: 0,
+              filter: "blur(24px)",
+              y: 70,
+              rotateX: 78,
+              skewY: 2,
+              transformOrigin: "50% 100%",
+            });
+            gsap.set(floaters, { opacity: 0, filter: "blur(26px)", y: 74, scale: 0.92 });
+
             const introTimeline = gsap.timeline({
               scrollTrigger: {
                 trigger: intro,
@@ -369,22 +357,13 @@ export default function WeddingExperience({ data }: Props) {
             });
 
             introTimeline
-              .fromTo(
+              .to(
                 introSupport,
-                { opacity: 0, filter: "blur(16px)", y: 22 },
                 { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.16, stagger: 0.05, ease: "none" },
                 0,
               )
-              .fromTo(
+              .to(
                 introWords,
-                {
-                  opacity: 0,
-                  filter: "blur(24px)",
-                  y: 70,
-                  rotateX: 78,
-                  skewY: 2,
-                  transformOrigin: "50% 100%",
-                },
                 {
                   opacity: 1,
                   filter: "blur(0px)",
@@ -397,24 +376,17 @@ export default function WeddingExperience({ data }: Props) {
                 },
                 0.04,
               )
-              .fromTo(
-                [headLiz, headIsra],
-                { opacity: 0, filter: "blur(28px)", y: 80, scale: 0.55, rotation: 0 },
-                { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, duration: 0.28, stagger: 0.07, ease: "none" },
+              .to(
+                floaters,
+                { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, duration: 0.28, ease: "none" },
                 0.14,
               )
-              .fromTo(
-                heart,
-                { opacity: 0, filter: "blur(14px)", y: 18, scale: 0.72 },
-                { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, duration: 0.16, ease: "none" },
-                0.2,
-              )
-              .to(headLiz, { x: conditions.mobile ? -14 : -46, y: conditions.mobile ? -16 : -34, rotation: -10, scale: 1.04, duration: 0.24, ease: "none" }, 0.48)
-              .to(headIsra, { x: conditions.mobile ? 14 : 46, y: conditions.mobile ? 12 : 34, rotation: 10, scale: 1.04, duration: 0.24, ease: "none" }, 0.48)
-              .to(heart, { y: -14, scale: 1.12, duration: 0.18, ease: "none" }, 0.54)
-              .to(orbit ?? intro, { y: conditions.mobile ? -14 : -26, scale: conditions.mobile ? 1.01 : 1.035, duration: 0.22, ease: "none" }, 0.56)
+              .to(headLiz, { x: conditions.mobile ? -8 : -24, y: conditions.mobile ? 10 : 26, rotation: -7, scale: 0.98, duration: 0.24, ease: "none" }, 0.48)
+              .to(headIsra, { x: conditions.mobile ? 8 : 24, y: conditions.mobile ? 8 : 22, rotation: 7, scale: 0.98, duration: 0.24, ease: "none" }, 0.48)
+              .to(heart, { y: conditions.mobile ? -4 : -8, scale: 1.04, duration: 0.18, ease: "none" }, 0.54)
+              .to(floaters, { y: conditions.mobile ? -8 : -16, duration: 0.22, ease: "none" }, 0.56)
               .to(
-                [introWords, introSupport, headLiz, headIsra, heart],
+                [introWords, introSupport, floaters],
                 {
                   opacity: 0.08,
                   filter: "blur(18px)",
@@ -433,6 +405,17 @@ export default function WeddingExperience({ data }: Props) {
             const media = scene.querySelectorAll<HTMLElement>(".reveal-media");
             const index = Number(scene.dataset.sceneIndex || 0);
 
+            gsap.set(support, { opacity: 0, filter: "blur(14px)", y: 20 });
+            gsap.set(words, {
+              opacity: 0,
+              filter: "blur(24px)",
+              y: 68,
+              rotateX: 74,
+              skewY: 1.8,
+              transformOrigin: "50% 100%",
+            });
+            gsap.set(media, { opacity: 0, filter: "blur(18px)", y: 36, scale: 0.94, rotation: index % 2 ? 3 : -3 });
+
             const timeline = gsap.timeline({
               scrollTrigger: {
                 trigger: scene,
@@ -444,21 +427,18 @@ export default function WeddingExperience({ data }: Props) {
             });
 
             timeline
-              .fromTo(
+              .to(
                 support,
-                { opacity: 0, filter: "blur(14px)", y: 20 },
                 { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.16, stagger: 0.04, ease: "none" },
                 0,
               )
-              .fromTo(
+              .to(
                 words,
-                { opacity: 0, filter: "blur(24px)", y: 68, rotateX: 74, skewY: 1.8, transformOrigin: "50% 100%" },
                 { opacity: 1, filter: "blur(0px)", y: 0, rotateX: 0, skewY: 0, duration: 0.32, stagger: 0.014, ease: "none" },
                 0.04,
               )
-              .fromTo(
+              .to(
                 media,
-                { opacity: 0, filter: "blur(18px)", y: 36, scale: 0.94, rotation: index % 2 ? 3 : -3 },
                 { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, rotation: index % 2 ? 1 : -1, duration: 0.26, ease: "none" },
                 0.12,
               )
@@ -470,7 +450,7 @@ export default function WeddingExperience({ data }: Props) {
 
           gsap.utils.toArray<HTMLElement>("[data-reveal-section]").forEach((section) => {
             const children = section.querySelectorAll<HTMLElement>("[data-reveal-item]");
-            createScrubReveal(section, children, {
+            createScrubReveal(children, {
               fromBlur: 26,
               fromY: 64,
               fromRotateX: 70,
@@ -638,41 +618,6 @@ export default function WeddingExperience({ data }: Props) {
         <div className="scene-stage intro-stage">
           <div className="paper-noise" aria-hidden="true" />
           <div className="intro-shell" data-hero-orbit>
-            <figure className="intro-portrait intro-portrait-liz" data-head-liz>
-              <div className="intro-portrait-art">
-                <span className="portrait-halo" aria-hidden="true" />
-                <Image
-                  src="/images/hero-liz.png"
-                  alt="Liz de nina"
-                  fill
-                  sizes="(max-width: 820px) 38vw, 300px"
-                  priority
-                  className="cutout-image"
-                />
-              </div>
-              <figcaption>Liz</figcaption>
-            </figure>
-
-            <figure className="intro-portrait intro-portrait-isra" data-head-isra>
-              <div className="intro-portrait-art">
-                <span className="portrait-halo" aria-hidden="true" />
-                <Image
-                  src="/images/hero-israel.png"
-                  alt="Isra de nino"
-                  fill
-                  sizes="(max-width: 820px) 38vw, 300px"
-                  priority
-                  className="cutout-image"
-                />
-              </div>
-              <figcaption>Isra</figcaption>
-            </figure>
-
-            <div className="intro-heart-cluster" data-heart>
-              <div className="heart-shape" aria-hidden="true"><span /></div>
-              <small>{data.date.short}</small>
-            </div>
-
             <div className="intro-copy">
               <p className="kicker reveal-support">{data.intro.kicker}</p>
               <h2 className="intro-title">
@@ -681,7 +626,44 @@ export default function WeddingExperience({ data }: Props) {
               <p className="intro-lead reveal-support">{data.intro.body}</p>
             </div>
 
-            <p className="intro-instruction reveal-support">{data.intro.instruction}</p>
+            <div className="intro-floating-row" data-hero-floaters>
+              <figure className="intro-portrait intro-portrait-liz" data-head-liz>
+                <div className="intro-portrait-art">
+                  <span className="portrait-halo" aria-hidden="true" />
+                  <Image
+                    src="/images/hero-liz-clean.png"
+                    alt="Liz de nina"
+                    fill
+                    sizes="(max-width: 820px) 34vw, 230px"
+                    priority
+                    className="cutout-image"
+                  />
+                </div>
+                <figcaption>Liz</figcaption>
+              </figure>
+
+              <div className="intro-heart-cluster" data-heart>
+                <div className="heart-shape" aria-hidden="true"><span /></div>
+                <small>{data.date.short}</small>
+              </div>
+
+              <figure className="intro-portrait intro-portrait-isra" data-head-isra>
+                <div className="intro-portrait-art">
+                  <span className="portrait-halo" aria-hidden="true" />
+                  <Image
+                    src="/images/hero-israel-clean.png"
+                    alt="Isra de nino"
+                    fill
+                    sizes="(max-width: 820px) 34vw, 230px"
+                    priority
+                    className="cutout-image"
+                  />
+                </div>
+                <figcaption>Isra</figcaption>
+              </figure>
+            </div>
+
+            <p className="intro-instruction">{data.intro.instruction}</p>
           </div>
         </div>
       </section>
