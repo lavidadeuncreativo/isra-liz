@@ -355,6 +355,7 @@ export default function WeddingExperience({ data }: Props) {
           const headLiz = intro?.querySelector<HTMLElement>("[data-head-liz]");
           const headIsra = intro?.querySelector<HTMLElement>("[data-head-isra]");
           const heart = intro?.querySelector<HTMLElement>("[data-heart]");
+          const orbit = intro?.querySelector<HTMLElement>("[data-hero-orbit]");
 
           if (intro && introWords.length && headLiz && headIsra && heart) {
             const introTimeline = gsap.timeline({
@@ -398,8 +399,8 @@ export default function WeddingExperience({ data }: Props) {
               )
               .fromTo(
                 [headLiz, headIsra],
-                { opacity: 0, filter: "blur(18px)", y: 54, scale: 0.84 },
-                { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, duration: 0.22, stagger: 0.06, ease: "none" },
+                { opacity: 0, filter: "blur(28px)", y: 80, scale: 0.55, rotation: 0 },
+                { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, duration: 0.28, stagger: 0.07, ease: "none" },
                 0.14,
               )
               .fromTo(
@@ -408,9 +409,10 @@ export default function WeddingExperience({ data }: Props) {
                 { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, duration: 0.16, ease: "none" },
                 0.2,
               )
-              .to(headLiz, { x: conditions.mobile ? -8 : -26, y: conditions.mobile ? -8 : -12, rotation: -5, duration: 0.22, ease: "none" }, 0.48)
-              .to(headIsra, { x: conditions.mobile ? 8 : 26, y: conditions.mobile ? -8 : -12, rotation: 5, duration: 0.22, ease: "none" }, 0.48)
-              .to(heart, { y: -10, scale: 1.05, duration: 0.16, ease: "none" }, 0.54)
+              .to(headLiz, { x: conditions.mobile ? -14 : -46, y: conditions.mobile ? -16 : -34, rotation: -10, scale: 1.04, duration: 0.24, ease: "none" }, 0.48)
+              .to(headIsra, { x: conditions.mobile ? 14 : 46, y: conditions.mobile ? 12 : 34, rotation: 10, scale: 1.04, duration: 0.24, ease: "none" }, 0.48)
+              .to(heart, { y: -14, scale: 1.12, duration: 0.18, ease: "none" }, 0.54)
+              .to(orbit ?? intro, { y: conditions.mobile ? -14 : -26, scale: conditions.mobile ? 1.01 : 1.035, duration: 0.22, ease: "none" }, 0.56)
               .to(
                 [introWords, introSupport, headLiz, headIsra, heart],
                 {
@@ -468,7 +470,15 @@ export default function WeddingExperience({ data }: Props) {
 
           gsap.utils.toArray<HTMLElement>("[data-reveal-section]").forEach((section) => {
             const children = section.querySelectorAll<HTMLElement>("[data-reveal-item]");
-            createScrubReveal(section, children);
+            createScrubReveal(section, children, {
+              fromBlur: 26,
+              fromY: 64,
+              fromRotateX: 70,
+              outBlur: 24,
+              outY: -54,
+              outOpacity: 0,
+              stagger: 0.08,
+            });
           });
 
           ScrollTrigger.refresh();
@@ -627,50 +637,48 @@ export default function WeddingExperience({ data }: Props) {
       <section className="intro-scene" data-intro-scene>
         <div className="scene-stage intro-stage">
           <div className="paper-noise" aria-hidden="true" />
-          <div className="intro-shell">
+          <div className="intro-shell" data-hero-orbit>
+            <figure className="intro-portrait intro-portrait-liz" data-head-liz>
+              <div className="intro-portrait-art">
+                <span className="portrait-halo" aria-hidden="true" />
+                <Image
+                  src="/images/hero-liz.png"
+                  alt="Liz de nina"
+                  fill
+                  sizes="(max-width: 820px) 38vw, 300px"
+                  priority
+                  className="cutout-image"
+                />
+              </div>
+              <figcaption>Liz</figcaption>
+            </figure>
+
+            <figure className="intro-portrait intro-portrait-isra" data-head-isra>
+              <div className="intro-portrait-art">
+                <span className="portrait-halo" aria-hidden="true" />
+                <Image
+                  src="/images/hero-israel.png"
+                  alt="Isra de nino"
+                  fill
+                  sizes="(max-width: 820px) 38vw, 300px"
+                  priority
+                  className="cutout-image"
+                />
+              </div>
+              <figcaption>Isra</figcaption>
+            </figure>
+
+            <div className="intro-heart-cluster" data-heart>
+              <div className="heart-shape" aria-hidden="true"><span /></div>
+              <small>{data.date.short}</small>
+            </div>
+
             <div className="intro-copy">
               <p className="kicker reveal-support">{data.intro.kicker}</p>
               <h2 className="intro-title">
                 <LineWords lines={data.intro.titleLines} />
               </h2>
               <p className="intro-lead reveal-support">{data.intro.body}</p>
-            </div>
-
-            <div className="intro-portraits">
-              <figure className="intro-portrait intro-portrait-liz" data-head-liz>
-                <div className="intro-portrait-art">
-                  <span className="portrait-halo" aria-hidden="true" />
-                  <Image
-                    src="/images/hero-liz.png"
-                    alt="Liz de nina"
-                    fill
-                    sizes="(max-width: 820px) 34vw, 250px"
-                    priority
-                    className="cutout-image"
-                  />
-                </div>
-                <figcaption>Liz</figcaption>
-              </figure>
-
-              <div className="intro-heart-cluster" data-heart>
-                <div className="heart-shape" aria-hidden="true"><span /></div>
-                <small>{data.date.short}</small>
-              </div>
-
-              <figure className="intro-portrait intro-portrait-isra" data-head-isra>
-                <div className="intro-portrait-art">
-                  <span className="portrait-halo" aria-hidden="true" />
-                  <Image
-                    src="/images/hero-israel.png"
-                    alt="Isra de nino"
-                    fill
-                    sizes="(max-width: 820px) 34vw, 250px"
-                    priority
-                    className="cutout-image"
-                  />
-                </div>
-                <figcaption>Isra</figcaption>
-              </figure>
             </div>
 
             <p className="intro-instruction reveal-support">{data.intro.instruction}</p>
@@ -759,7 +767,7 @@ export default function WeddingExperience({ data }: Props) {
         </div>
         <div className="gallery-marquee" data-reveal-item>
           <div className="gallery-track">
-            {[...data.gallery, ...data.gallery].map((item, index) => (
+            {[...data.gallery, ...data.gallery, ...data.gallery].map((item, index) => (
               <figure className="gallery-slide" key={`${item.src}-${index}`} aria-hidden={index >= data.gallery.length}>
                 <div className="gallery-image">
                   <Image src={item.src} alt={item.alt} fill sizes="(max-width: 820px) 72vw, 360px" />
@@ -780,6 +788,9 @@ export default function WeddingExperience({ data }: Props) {
         <div className="details-grid details-grid-compact">
           {data.essentials.map((item) => (
             <article className="detail-card" data-reveal-item key={item.label}>
+              <div className="detail-visual" aria-hidden="true">
+                <span>{item.visual}</span>
+              </div>
               <small>{item.label}</small>
               <h3>{item.title}</h3>
               <p>{item.body}</p>

@@ -8,8 +8,8 @@ export const wedding = {
     entryNote: "Pasa, lo preparamos con mucho cariño para ti.",
     kicker: "Esto lo queremos vivir contigo",
     titleLines: [
-      "Despues de tantas vueltas,",
-      "por fin encontramos un nosotros.",
+      "¿Quién pensaría que",
+      "estos dos se iban a casar?",
     ],
     body: "Y nos haria muy feliz que nos acompanes a celebrar este comienzo.",
     instruction: "Sigue bajando",
@@ -93,6 +93,7 @@ export const wedding = {
       label: "Ubicacion",
       title: "Salon Presidente",
       body: "Uruapan, Michoacan",
+      visual: "Mapa",
       actionLabel: "Abrir ubicacion",
       href: "https://maps.app.goo.gl/UriaBSsoG5AfLaY78",
     },
@@ -100,11 +101,13 @@ export const wedding = {
       label: "Codigo de vestimenta",
       title: "Formal",
       body: "Elegante, comodo y listo para bailar toda la noche.",
+      visual: "Dress",
     },
     {
       label: "Hospedaje",
       title: "Uruapan",
       body: "Muy pronto compartiremos opciones recomendadas para quienes vienen de fuera.",
+      visual: "Stay",
     },
   ],
   schedule: [
