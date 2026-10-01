@@ -1405,3 +1405,42 @@ summary:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
 }
+
+
+/* Linked RSVP with wedding platform */
+.linked-rsvp-form .linked-household-intro{
+  padding:20px;
+  background:#f7f0ed;
+  border:1px solid rgba(107,41,60,.15);
+  border-radius:18px;
+}
+.linked-household-intro h3{
+  font-family:var(--font-serif,Georgia,serif);
+  font-size:clamp(26px,5vw,38px);
+  font-weight:400;
+  margin:8px 0;
+}
+.linked-household-intro p:last-child{
+  font-size:14px;
+  line-height:1.6;
+  margin:0;
+}
+.linked-rsvp-form .linked-person{
+  padding:20px 0 22px;
+  border:none;
+  border-bottom:1px solid rgba(107,41,60,.17);
+}
+.linked-rsvp-form .linked-person legend{
+  font-size:18px;
+  font-weight:700;
+  padding:0;
+  margin:0 0 12px;
+}
+.linked-person-choices{display:flex;flex-wrap:wrap;gap:10px 22px;}
+.linked-person-choices .radio-label{display:inline-flex;align-items:center;gap:8px;}
+.linked-dietary{display:grid;gap:9px;margin-top:16px;}
+.rsvp-personalized-help{display:grid;gap:8px;line-height:1.7;}
+.invite-unavailable{min-height:100dvh;display:grid;align-content:center;justify-items:center;text-align:center;gap:12px;background:#f2eee7;color:#241d20;padding:30px;}
+.invite-unavailable h1{font-family:Georgia,serif;font-size:clamp(28px,5vw,42px);font-weight:400;max-width:620px;}
+.invite-unavailable p{max-width:520px;}
+@media(max-width:520px){.linked-person-choices{display:grid;gap:10px;}.linked-rsvp-form .linked-household-intro{padding:16px;}}
