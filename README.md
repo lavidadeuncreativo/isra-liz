@@ -113,6 +113,43 @@ RSVP_FROM_EMAIL=Invitacion Isra&Liz <invitacion@tu-dominio.com>
 
 En producción necesitas verificar el dominio remitente en Resend.
 
+## 5A. Conectar el RSVP con la plataforma de bodas
+
+La invitación personal puede usar el **mismo Supabase** que el panel privado de la boda.
+El recorrido es:
+
+`/app/invitados` (hogares y enlaces) → `https://isra-liz.vercel.app/i/CODIGO` → `/api/rsvp/linked` → funciones `get_public_rsvp` y `submit_public_rsvp` de la plataforma.
+
+No se necesita iniciar sesión para confirmar. El código de hogar determina las personas y los lugares permitidos.
+
+**Configuración para Vercel del proyecto isra-liz** (y para desarrollo local):
+
+```env
+WEDDING_PLATFORM_SUPABASE_URL=https://TU_PROYECTO.supabase.co
+WEDDING_PLATFORM_SUPABASE_ANON_KEY=TU_CLAVE_PUBLICABLE_O_ANON
+WEDDING_PLATFORM_WEDDING_SLUG=EL_SLUG_DE_LA_BODA_DE_ISRA_Y_LIZ
+```
+
+La clave debe ser la *publishable/anon* de Supabase: **nunca** una clave `service_role`, y nunca incrustar secretos en código.
+
+El slug es el segmento tras `/b/` del enlace general que muestra el panel de la boda. La API de esta invitación verifica que los datos pertenezcan a ese slug, para no mostrar invitados de otras bodas.
+
+Con las tres variables configuradas y un nuevo despliegue:
+- La página general `/` **ya no acepta RSVP libre por correo**: indica que se debe usar un enlace personalizado.
+- Las URLs `/i/CODIGO` muestran la experiencia editorial y al final las respuestas por invitado.
+- Guardar la respuesta actualiza las mismas filas en `public.guests` y `public.households` que usa la plataforma.
+- Se puede volver a abrir el enlace para modificar la confirmación.
+- Si la integración no está configurada, el formulario general mantiene temporalmente el comportamiento legado por email; **eso no sincroniza con la plataforma**.
+- `/api/gifts` sigue independiente para regalos.
+
+**En el proyecto de la plataforma:**
+1. Ejecuta en Supabase `supabase/migrations/012_external_invitation_url.sql`.
+2. En `/app/invitacion`, introduce `https://isra-liz.vercel.app`, pero deja desactivado el interruptor de envíos.
+3. Prueba desde un hogar existente `https://isra-liz.vercel.app/i/CODIGO_REAL` y comprueba la respuesta en `Sus invitados`.
+4. Solo después, activa «Usar este sitio al enviar invitaciones personalizadas» y guarda. No modifica los enlaces antiguos ya enviados.
+
+**Antes de un envío real:** confirma el slug correcto, las variables en Vercel y el retorno del RSVP. Prueba en Safari/iPhone; la historia y sus animaciones deben seguir siendo navegables.
+
 ## 6. Activar regalos
 
 Si quieres activar las mesas externas, agrega sus ligas:
