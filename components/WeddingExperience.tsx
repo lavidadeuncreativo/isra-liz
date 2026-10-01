@@ -622,7 +622,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
             <button type="button" className="button button-primary" onClick={() => enter(true)}>Entrar con audio</button>
             <button type="button" className="button button-secondary" onClick={() => enter(false)}>Continuar sin audio</button>
           </div>
-          <p className="entry-note">{data.intro.entryNote}</p>
+          <p className="entry-note">{linkedHousehold?`Una invitación especial para ${linkedHousehold.name}. La preparamos con mucho cariño para ustedes.`:data.intro.entryNote}</p>
         </div>
       </div>
 
