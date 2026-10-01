@@ -48,7 +48,7 @@ async function invokeRpc<T>(name:string,body:Record<string,unknown>):Promise<T>{
 
   const res=await fetch(`${base.replace(/\/$/,"")}/rest/v1/rpc/${name}`,{
     method:"POST",
-    headers:{"Content-Type":"application/json",apikey:key,Authorization:`Bearer ${key}`},
+    headers:{"Content-Type":"application/json",apikey:key},
     body:JSON.stringify(body),
     cache:"no-store",
   });
