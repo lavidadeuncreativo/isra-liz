@@ -5,8 +5,13 @@ import { Fragment, FormEvent, useEffect, useLayoutEffect, useRef, useState } fro
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import type { WeddingData } from "@/data/wedding";
+import type { LinkedGuest, LinkedHousehold } from "@/lib/platform-rsvp";
 
-type Props = { data: WeddingData };
+type Props = {
+  data: WeddingData;
+  linkedHousehold?: LinkedHousehold;
+  rsvpLinkedOnly?: boolean;
+};
 type SubmitState = "idle" | "loading" | "success" | "error";
 type GiftModalMode = "info" | "contribution" | null;
 
@@ -217,12 +222,14 @@ type ScrubRevealOptions = {
   stagger?: number;
 };
 
-export default function WeddingExperience({ data }: Props) {
+export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnly = false }: Props) {
   const rootRef = useRef<HTMLElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [entered, setEntered] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [attendance, setAttendance] = useState("");
+  const [linkedGuests, setLinkedGuests] = useState<LinkedGuest[]>(linkedHousehold?.guests||[]);
+  const [linkedMessage, setLinkedMessage] = useState(linkedHousehold?.message||"");
   const [giftModal, setGiftModal] = useState<GiftModalMode>(null);
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
   const [submitMessage, setSubmitMessage] = useState("");
@@ -500,24 +507,46 @@ export default function WeddingExperience({ data }: Props) {
     }
   }
 
+  function updateLinkedGuest(id:string,status:"yes"|"no"){
+    setLinkedGuests(current=>current.map(guest=>guest.id===id
+      ? {...guest,rsvp:status,dietary:status==="no"?"":guest.dietary}
+      : guest));
+    setSubmitState("idle");
+    setSubmitMessage("");
+  }
+
+  function updateLinkedDietary(id:string,value:string){
+    setLinkedGuests(current=>current.map(guest=>guest.id===id?{...guest,dietary:value}:guest));
+    setSubmitState("idle");
+  }
+
   async function submitRsvp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if(linkedHousehold&&linkedGuests.some(guest=>guest.rsvp==="pending")){
+      setSubmitState("error");
+      setSubmitMessage("Por favor, confirmen la asistencia de cada persona antes de continuar.");
+      return;
+    }
     setSubmitState("loading");
     setSubmitMessage("");
 
     const form = event.currentTarget;
-    const payload = Object.fromEntries(new FormData(form).entries());
+    const payload = linkedHousehold
+      ? {code:linkedHousehold.inviteCode,guests:linkedGuests,message:linkedMessage}
+      : Object.fromEntries(new FormData(form).entries());
 
     try {
-      const response = await fetch("/api/rsvp", {
+      const response = await fetch(linkedHousehold?"/api/rsvp/linked":"/api/rsvp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const result = (await response.json()) as { ok?: boolean; message?: string };
       if (!response.ok || !result.ok) throw new Error(result.message || "No pudimos enviar tu confirmacion.");
-      form.reset();
-      setAttendance("");
+      if(!linkedHousehold){
+        form.reset();
+        setAttendance("");
+      }
       setSubmitState("success");
       setSubmitMessage(result.message || "Tu confirmacion quedo registrada. Gracias.");
     } catch (error) {
@@ -801,7 +830,37 @@ export default function WeddingExperience({ data }: Props) {
           <h2>Queremos contar contigo.</h2>
           <p>Nos ayudara muchisimo que respondas con tiempo para organizar cada detalle con carino.</p>
         </div>
-        <form className="rsvp-form" onSubmit={submitRsvp} data-reveal-item>
+        {linkedHousehold ? <form className="rsvp-form linked-rsvp-form" onSubmit={submitRsvp} data-reveal-item>
+          <div className="linked-household-intro">
+            <p className="eyebrow">INVITACIÓN PERSONALIZADA</p>
+            <h3>{linkedHousehold.name}</h3>
+            <p>Hemos reservado {linkedHousehold.spotsAllowed} {linkedHousehold.spotsAllowed===1?"lugar":"lugares"} para ustedes. Confirmen por persona; si cambian de planes, pueden volver a este mismo enlace.</p>
+          </div>
+          {linkedGuests.map(guest=><fieldset className="linked-person" key={guest.id}>
+            <legend>{guest.firstName} {guest.lastName}</legend>
+            <div className="linked-person-choices">
+              <label className="radio-label">
+                <input type="radio" name={`attendance-${guest.id}`} checked={guest.rsvp==="yes"} onChange={()=>updateLinkedGuest(guest.id,"yes")}/> Sí asistiré
+              </label>
+              <label className="radio-label">
+                <input type="radio" name={`attendance-${guest.id}`} checked={guest.rsvp==="no"} onChange={()=>updateLinkedGuest(guest.id,"no")}/> No podré asistir
+              </label>
+            </div>
+            {guest.rsvp==="yes"&&<label className="linked-dietary">Alergias o restricciones alimentarias (opcional)
+              <input value={guest.dietary||""} maxLength={500} onChange={e=>updateLinkedDietary(guest.id,e.target.value)} placeholder="Ej. vegetariano, sin gluten..." />
+            </label>}
+          </fieldset>)}
+          <label>Mensaje para nosotros (opcional)
+            <textarea value={linkedMessage} onChange={e=>{setLinkedMessage(e.target.value);setSubmitState("idle");}} rows={4} maxLength={1000}/>
+          </label>
+          <button className="button button-primary submit-button" type="submit" disabled={submitState==="loading"}>
+            {submitState==="loading"?"Guardando...":submitState==="success"?"Actualizar confirmación":"Confirmar asistencia"}
+          </button>
+          {submitMessage&&<p className={`form-status ${submitState}`} role="status">{submitMessage}</p>}
+        </form> : rsvpLinkedOnly ? <div className="rsvp-form rsvp-personalized-help" data-reveal-item>
+          <p>Para confirmar necesitamos identificar a tu familia y los lugares reservados.</p>
+          <p>Abre el enlace personalizado que te enviamos por WhatsApp o correo. Si no lo tienes, escríbenos y te lo compartimos con gusto.</p>
+        </div> : <form className="rsvp-form" onSubmit={submitRsvp} data-reveal-item>
           <input className="honeypot" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true" />
           <label>Nombre completo<input name="name" required maxLength={120} /></label>
           <fieldset>
@@ -816,7 +875,7 @@ export default function WeddingExperience({ data }: Props) {
           <label>Mensaje para nosotros<textarea name="message" rows={4} maxLength={1000} /></label>
           <button className="button button-primary submit-button" type="submit" disabled={submitState === "loading"}>{submitState === "loading" ? "Enviando..." : "Confirmar asistencia"}</button>
           {submitMessage ? <p className={`form-status ${submitState}`} role="status">{submitMessage}</p> : null}
-        </form>
+        </form>}
       </section>
 
       <section id="regalos" className="content-section gifts-section" data-reveal-section>
