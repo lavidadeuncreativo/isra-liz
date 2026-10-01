@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { platformRsvpConfigured } from "@/lib/platform-rsvp";
 
 type Payload = {
   name?: unknown;
@@ -58,6 +59,12 @@ async function sendEmail({ to, subject, html }: { to: string | string[]; subject
 }
 
 export async function POST(request: Request) {
+  if(platformRsvpConfigured()){
+    return NextResponse.json(
+      {ok:false,message:"Las confirmaciones se reciben únicamente desde el enlace personalizado de cada familia."},
+      {status:410}
+    );
+  }
   try {
     const payload = (await request.json()) as Payload;
 
