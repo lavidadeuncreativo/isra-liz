@@ -1852,7 +1852,7 @@ summary:focus-visible {
   transform: translateX(-50%);
   text-transform: uppercase;
 }
-.entry-cover-foil .foil-top { top: clamp(32px,7vh,76px); }
+.entry-cover-foil .foil-top { top: 24px; }
 .entry-cover-foil .foil-bottom { bottom: clamp(28px,5vh,58px); }
 .entry-content {
   z-index: 3;
