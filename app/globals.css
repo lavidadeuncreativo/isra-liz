@@ -224,11 +224,12 @@ summary:focus-visible {
 .intro-scene,
 .story-scene {
   position: relative;
-  min-height: 158svh;
+  min-height: 166svh;
 }
 
+/* Shorter reading chapters, with a measured scroll zone for the sticky stage. */
 .reveal-scene,
-.invite-scene { min-height: 136svh; }
+.invite-scene { min-height: 140svh; }
 
 .scene-stage {
   position: sticky;
@@ -301,7 +302,7 @@ summary:focus-visible {
 .reveal-word {
   display: inline-block;
   backface-visibility: hidden;
-  will-change: opacity, filter, transform;
+  /* Avoid keeping every word permanently on a GPU layer. */
 }
 
 .couple-wordmark {
@@ -623,7 +624,7 @@ summary:focus-visible {
   width: min(1220px, 100%);
   display: grid;
   grid-template-columns: 1fr 1fr;
-  margin: 76px auto 0;
+  margin: 52px auto 0;
   border-top: 1px solid var(--line);
   border-left: 1px solid var(--line);
 }
@@ -671,7 +672,7 @@ summary:focus-visible {
 
 .gallery-marquee {
   width: min(1440px, 100%);
-  margin: 76px auto 0;
+  margin: 54px auto 0;
   overflow: hidden;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
@@ -1217,10 +1218,10 @@ summary:focus-visible {
   .audio-control > span:last-child { display: none; }
 
   .intro-scene,
-  .story-scene { min-height: 182svh; }
+  .story-scene { min-height: 162svh; }
 
   .reveal-scene,
-  .invite-scene { min-height: 150svh; }
+  .invite-scene { min-height: 142svh; }
 
   .scene-stage { padding: 28px 18px; }
 
@@ -1254,7 +1255,7 @@ summary:focus-visible {
   .story-scene-4 .scene-layout {
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    gap: 22px;
     text-align: center;
   }
 
@@ -1264,18 +1265,19 @@ summary:focus-visible {
   .story-scene-4 .story-photo { order: initial; }
 
   .display-title {
-    font-size: clamp(48px, 13.6vw, 76px);
-    line-height: 0.88;
+    font-size: clamp(43px, 11.8vw, 70px);
+    line-height: 0.94;
   }
 
   .story-body {
-    margin-left: auto;
-    margin-right: auto;
-    font-size: clamp(20px, 5.8vw, 28px);
+    margin: 16px auto 0;
+    font-size: clamp(17px, 4.8vw, 22px);
+    line-height: 1.45;
+    max-width: 33rem;
   }
 
   .story-photo {
-    width: min(360px, 82vw);
+    width: min(280px, 60vw);
     justify-self: center;
   }
 
@@ -1325,7 +1327,7 @@ summary:focus-visible {
 
   .invite-actions .button { width: min(340px, 100%); }
 
-  .content-section { padding: 92px 18px; }
+  .content-section { padding: 76px 18px; }
 
   .section-heading h2,
   .closing-section h2,
@@ -1357,7 +1359,7 @@ summary:focus-visible {
   }
 
   .gallery-marquee {
-    margin-top: 68px;
+    margin-top: 46px;
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
     mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
   }
@@ -1371,7 +1373,7 @@ summary:focus-visible {
   .gallery-image { border-radius: 22px; }
 
   .schedule {
-    margin-top: 64px;
+    margin-top: 46px;
   }
 
   .schedule-row {
@@ -1404,7 +1406,34 @@ summary:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  .cutout-image,
+  .heart-shape,
+  .gallery-track {
+    animation: none !important;
+  }
+  .reveal-word { will-change: auto; }
 }
+
+/* Avoid clipping content on compact phones, especially landscape. */
+@media (max-width: 820px) and (max-height: 720px) {
+  .scene-stage { padding: 64px 18px 28px; }
+  .story-scene .scene-stage,
+  .invite-scene .scene-stage {
+    position: relative;
+    min-height: 100svh;
+    overflow: visible;
+  }
+  .story-scene .scene-layout { gap: 16px; }
+  .story-scene .display-title { font-size: clamp(38px, 10.8vw, 58px); }
+  .story-scene .story-photo { width: min(205px, 48vw); }
+  .invite-actions { gap: 8px; margin-top: 18px; }
+  .invite-actions .button { padding-top: 12px; padding-bottom: 12px; }
+  .countdown-panel { margin-top: 18px; }
+}
+
+/* A single configured gift choice fills the available space. */
+.gift-grid:has(> :only-child) { grid-template-columns: minmax(0, 1fr); }
+.gift-grid:has(> :only-child) .gift-card { max-width: 720px; width: 100%; margin-inline: auto; }
 
 
 /* Linked RSVP with wedding platform */
