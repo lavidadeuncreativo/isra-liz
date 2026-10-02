@@ -117,6 +117,24 @@ async function inspect(width, height, reduced = false) {
   const intro = await evaluate("({visibility:getComputedStyle(document.querySelector('.intro-title .reveal-word')).visibility,opacity:Number(getComputedStyle(document.querySelector('.intro-title .reveal-word')).opacity)})");
   assert(intro.visibility !== "hidden" && intro.opacity > 0.85, width + "px: portada oculta");
 
+  const ui = await evaluate("(() => { const dock=document.querySelector('.mobile-dock'); const bar=document.querySelector('.scroll-progress-line'); return {dock:getComputedStyle(dock).display, tabs:dock.querySelectorAll('a,button').length, bar:!!bar, church:!!document.querySelector('.mobile-menu-panel a[href*=\"church\"]')}; })()");
+  assert(ui.bar, "No se encontró la barra de progreso");
+  assert(ui.tabs === 4, width + "px: el menú no tiene cuatro accesos");
+  if (width <= 820) {
+    assert(ui.dock === "grid", width + "px: la navegación móvil no es persistente");
+    await evaluate("document.querySelector('.mobile-dock button').click(); true");
+    await sleep(180);
+    const menu = await evaluate("(() => { const m=document.querySelector('.mobile-menu-panel'); return {open:!!m,links:m?.querySelectorAll('a').length||0,containsRsvp:!!m?.querySelector('a[href=\"#rsvp\"]')}; })()");
+    assert(menu.open && menu.links >= 7 && menu.containsRsvp, width + "px: menú móvil incompleto");
+    await screenshot("mobile-menu-" + width + ".png");
+    await evaluate("document.querySelector('.mobile-dock button').click();true");
+    await sleep(180);
+    assert(await evaluate("!document.querySelector('.mobile-menu-panel')"), width + "px: el menú no cierra");
+  } else {
+    assert(ui.dock === "none", "El dock móvil no debe mostrarse en escritorio");
+  }
+
+
   // The next chapter must begin hidden BEFORE reaching the viewport and
   // be completely readable once its sticky stage occupies the viewport.
   if (!reduced) {
@@ -130,12 +148,40 @@ async function inspect(width, height, reduced = false) {
   const story = await evaluate("(() => { const s=document.querySelector('.story-scene-1'); const last=[...s.querySelectorAll('.display-title .reveal-word')].at(-1);const lastBody=[...s.querySelectorAll('.story-body .reveal-word')].at(-1); const photo=s.querySelector('.story-photo'); return {word:Number(getComputedStyle(last).opacity),body:Number(getComputedStyle(lastBody).opacity),photo:Number(getComputedStyle(photo).opacity),horizontalOverflow:document.documentElement.scrollWidth>window.innerWidth+2}; })()");
   assert(story.word > 0.85 && story.body > 0.85 && story.photo > 0.85, width + "px: escena no legible " + JSON.stringify(story));
   assert(!story.horizontalOverflow, width + "px: overflow horizontal");
+  // At the end of a narrative scene the editorial blur must return, not
+  // remain static after the first reveal.
+  if (!reduced) {
+    await evaluate("window.scrollTo({top:document.querySelector('.story-scene-1').offsetTop+document.querySelector('.story-scene-1').offsetHeight-window.innerHeight,behavior:'instant'});true");
+    await sleep(750);
+    const departing = await evaluate("Number(getComputedStyle(document.querySelector('.story-scene-1 .display-title .reveal-word')).opacity)");
+    assert(departing < 0.30, width + "px: no se aprecia blur disappear (" + departing + ")");
+  }
+
   await screenshot(reduced ? "reduced-motion.png" : "story-" + width + ".png");
+
+  // Two visually identical groups permit an uninterrupted half-track loop.
+  const loop = await evaluate("(() => { const groups=[...document.querySelectorAll('.gallery-loop-group')]; return {length:groups.length,first:groups[0]?.getBoundingClientRect().width,second:groups[1]?.getBoundingClientRect().width,animation:getComputedStyle(document.querySelector('.gallery-track')).animationName};})()");
+  assert(loop.length === 2 && Math.abs(loop.first-loop.second) < 1, width + "px: la galería no tiene dos ciclos iguales");
+  if (!reduced) {
+    assert(loop.animation !== "none", width + "px: carrusel sin animación");
+    await evaluate("document.querySelector('.gallery-pause').click();true");
+    await sleep(180);
+    const paused = await evaluate("({pressed:document.querySelector('.gallery-pause').getAttribute('aria-pressed'),state:getComputedStyle(document.querySelector('.gallery-track')).animationPlayState})");
+    assert(paused.pressed === "true" && paused.state === "paused", width + "px: botón de pausa no funciona");
+    await evaluate("document.querySelector('.gallery-pause').click();true");
+    await sleep(180);
+    assert(await evaluate("getComputedStyle(document.querySelector('.gallery-track')).animationPlayState === 'running'"),
+      width + "px: no se pudo reanudar el carrusel");
+  }
 
   await evaluate("document.querySelector('#rsvp').scrollIntoView({block:'start',behavior:'instant'}); true");
   await sleep(600);
   const rsvp = await evaluate("(() => { const f=document.querySelector('#rsvp .rsvp-form'); return {visibility:getComputedStyle(f).visibility,opacity:Number(getComputedStyle(f).opacity)}; })()");
   assert(rsvp.visibility !== "hidden" && rsvp.opacity > 0.99, width + "px: RSVP invisible");
+  await sleep(120);
+  const progress = await evaluate("(() => { const m=getComputedStyle(document.querySelector('.scroll-progress-line')).transform;return Number(m.match(/matrix\\(([^,]+)/)?.[1]||0);})()");
+  assert(progress > 0.35 && progress < 1, width + "px: barra de progreso fuera de rango (" + progress + ")");
+
   await screenshot(reduced ? "rsvp-reduced.png" : "rsvp-" + width + ".png");
 
   if (reduced) {
