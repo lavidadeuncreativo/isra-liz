@@ -1,5 +1,5 @@
 import { spawn, execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -132,5 +132,5 @@ try {
       sleep(1500),
     ]);
   }
-  rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+  // The ephemeral GitHub runner removes this Chrome profile at job shutdown.
 }
