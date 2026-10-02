@@ -206,6 +206,9 @@ async function inspect(width, height, reduced = false) {
 
   await evaluate("document.querySelector('#galeria').scrollIntoView({block:'start',behavior:'instant'});true");
   await sleep(850);
+  const galleryView = await evaluate("(() => {const strip=document.querySelector('#galeria .gallery-marquee'),photo=strip.querySelector('.gallery-image'),rect=photo.getBoundingClientRect();return {top:rect.top,bottom:rect.bottom,opacity:Number(getComputedStyle(strip).opacity),viewport:innerHeight};})()");
+  assert(galleryView.top < galleryView.viewport - 32 && galleryView.bottom > 0 && galleryView.opacity > .95,
+    width + "px: la galería se ve vacía al entrar " + JSON.stringify(galleryView));
   await screenshot(reduced ? "gallery-reduced.png" : "gallery-" + width + ".png");
 
   await evaluate("document.querySelector('#rsvp').scrollIntoView({block:'start',behavior:'instant'}); true");
