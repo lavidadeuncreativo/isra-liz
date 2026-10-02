@@ -141,8 +141,7 @@ async function inspect(width, height, reduced = false) {
   }
 
 
-  // The next chapter must begin hidden BEFORE reaching the viewport and
-  // be completely readable once its sticky stage occupies the viewport.
+  // The native-flow chapters should reveal on entry without artificial sticky scroll tails.
   if (!reduced) {
     await evaluate("window.scrollTo({top:document.querySelector('.story-scene-1').offsetTop-innerHeight*1.05,behavior:'instant'});true");
     await sleep(500);
@@ -169,14 +168,16 @@ async function inspect(width, height, reduced = false) {
   assert(geometry.title.bottom > 0 && geometry.title.top < height &&
     geometry.photo.bottom > 0 && geometry.photo.top < height,
     width + "px: texto o foto fuera del viewport " + JSON.stringify(geometry));
+  assert(geometry.stagePos === "relative", width + "px: sticky scroll artificial sigue activo " + JSON.stringify(geometry));
 
   // At the end of a narrative scene the editorial blur must return, not
   // remain static after the first reveal.
   if (!reduced) {
-    await evaluate("window.scrollTo({top:document.querySelector('.story-scene-1').offsetTop+document.querySelector('.story-scene-1').offsetHeight-window.innerHeight,behavior:'instant'});true");
-    await sleep(750);
-    const departing = await evaluate("Number(getComputedStyle(document.querySelector('.story-scene-1 .display-title .reveal-word')).opacity)");
-    assert(departing < 0.30, width + "px: no se aprecia blur disappear (" + departing + ")");
+    await evaluate("window.scrollTo({top:document.querySelector('.story-scene-1').offsetTop+document.querySelector('.story-scene-1').offsetHeight-innerHeight*.14,behavior:'instant'});true");
+    await sleep(780);
+    const departing = await evaluate("({opacity:Number(getComputedStyle(document.querySelector('.story-scene-1 .display-title .reveal-word')).opacity),blur:getComputedStyle(document.querySelector('.story-scene-1 .display-title .reveal-word')).filter})");
+    assert(departing.opacity < 0.30 && departing.blur.includes("blur"),
+      width + "px: no se aprecia blur disappear " + JSON.stringify(departing));
   }
 
   if (!reduced) await screenshot("story-exit-" + width + ".png");
@@ -197,8 +198,17 @@ async function inspect(width, height, reduced = false) {
       width + "px: no se pudo reanudar el carrusel");
   }
 
+  // A cover-only skin is not a rebrand. Verify the dark announcement and
+  // photographic spread plus the native-flow scroll sections.
+  const brand = await evaluate("(() => {const reveal=getComputedStyle(document.querySelector('.reveal-scene .scene-stage'));const gallery=getComputedStyle(document.querySelector('#galeria'));const closing=getComputedStyle(document.querySelector('.closing-section'));return {reveal:reveal.backgroundImage,gallery:gallery.backgroundColor,closing:closing.backgroundImage};})()");
+  assert(brand.reveal.includes("radial-gradient"), width + "px: missing dark announcement art direction");
+  assert(brand.gallery.includes("77, 26, 48") || brand.gallery.includes("77, 26, 48,"), width + "px: gallery still uses the original paper background");
+
   await evaluate("document.querySelector('#galeria').scrollIntoView({block:'start',behavior:'instant'});true");
   await sleep(850);
+  const galleryView = await evaluate("(() => {const strip=document.querySelector('#galeria .gallery-marquee'),photo=strip.querySelector('.gallery-image'),rect=photo.getBoundingClientRect();return {top:rect.top,bottom:rect.bottom,opacity:Number(getComputedStyle(strip).opacity),viewport:innerHeight};})()");
+  assert(galleryView.top < galleryView.viewport - 32 && galleryView.bottom > 0 && galleryView.opacity > .95,
+    width + "px: la galería se ve vacía al entrar " + JSON.stringify(galleryView));
   await screenshot(reduced ? "gallery-reduced.png" : "gallery-" + width + ".png");
 
   await evaluate("document.querySelector('#rsvp').scrollIntoView({block:'start',behavior:'instant'}); true");

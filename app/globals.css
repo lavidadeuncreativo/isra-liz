@@ -1,14 +1,14 @@
 @import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&display=swap");
 
 :root {
-  --paper: #f2eee7;
-  --paper-soft: #faf8f4;
-  --ink: #201b1d;
-  --muted: #746d70;
-  --wine: #762c47;
-  --wine-dark: #582035;
-  --line: rgba(32, 27, 29, 0.14);
-  --shadow: 0 26px 76px rgba(38, 26, 31, 0.12);
+  --paper: #f0e6db;
+  --paper-soft: #fbf6ee;
+  --ink: #2b1d22;
+  --muted: #73636a;
+  --wine: #66253d;
+  --wine-dark: #451829;
+  --line: rgba(91, 39, 57, .18);
+  --shadow: 0 22px 54px rgba(58, 24, 35, .11);
   --font-sans: "Figtree", Arial, sans-serif;
   --font-serif: "Instrument Serif", Georgia, serif;
   --page-gutter: clamp(20px, 5vw, 88px);
@@ -2033,6 +2033,358 @@ summary:focus-visible {
   .entry-screen { transition: opacity 220ms ease, visibility 220ms ease; will-change: auto; }
   .entry-screen.is-hidden { transform: none; opacity: 0; }
   .story-vellum { display: none !important; }
+}
+
+/* ISRA & LIZ / ALBUM CONTINUITY — one coherent visual system,
+   not a new decoration on an otherwise unchanged website. */
+html { scroll-behavior: auto; }
+.wedding-site {
+  --paper-deep: #e6d9ca;
+  --burgundy: #4b192e;
+  --ink-light: #f8f0e7;
+  --foil: #cba6a0;
+  background: var(--paper);
+}
+
+/* IMPORTANT: keep native page flow. The earlier 166svh sticky scenes
+   had scroll tails after the content had already blurred out. */
+.wedding-site .intro-scene,
+.wedding-site .story-scene,
+.wedding-site .reveal-scene,
+.wedding-site .invite-scene { min-height: 100svh; }
+.wedding-site .scene-stage,
+.wedding-site .story-scene .scene-stage,
+.wedding-site .invite-scene .scene-stage {
+  position: relative;
+  top: auto;
+  min-height: 100svh;
+  overflow: hidden;
+  padding-block: clamp(80px,9vh,120px);
+}
+.wedding-site .intro-scene .scene-stage { padding-block: clamp(72px,8vh,108px); }
+.wedding-site .story-scene .scene-stage { isolation: isolate; }
+.wedding-site .scene-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/images/album-cover-relief.svg") center / min(880px,100%) auto no-repeat;
+  opacity: .048;
+  pointer-events: none;
+  z-index: 0;
+}
+.wedding-site .scene-stage > :not(.paper-noise) {
+  position: relative;
+  z-index: 1;
+}
+.wedding-site .intro-stage::after,
+.wedding-site .invite-stage::after {
+  content: "I  ·  &  ·  L";
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  font-family: var(--font-serif),Georgia,serif;
+  font-size: 19px;
+  font-style: italic;
+  letter-spacing: .13em;
+  color: var(--wine);
+  opacity: .7;
+  pointer-events: none;
+}
+
+/* The scroll chapters read like consecutive spreads of an album. */
+.chapter-folio {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  color: var(--wine);
+  font-size: 10px;
+  font-weight: 760;
+  letter-spacing: .21em;
+}
+.chapter-folio::before {
+  content: "";
+  display: inline-block;
+  width: 38px;
+  height: 1px;
+  background: currentColor;
+}
+.wedding-site .story-scene .scene-layout { position: relative; z-index: 2; }
+.wedding-site .story-photo {
+  border: 9px solid #e9dccd;
+  border-radius: 49% 49% 46% 46%;
+  outline: 1px solid rgba(110,53,68,.3);
+  outline-offset: 6px;
+  box-shadow: 0 30px 66px rgba(50,27,35,.19), inset 0 0 0 1px rgba(255,255,255,.7);
+}
+.wedding-site .story-scene-2 .story-photo { border-color: #eddfd2; }
+.wedding-site .story-body {
+  max-width: 34ch;
+  line-height: 1.4;
+  letter-spacing: -.015em;
+  font-weight: 450;
+}
+.wedding-site .story-scene .display-title {
+  line-height: .91;
+  text-wrap: balance;
+}
+.wedding-site .story-vellum {
+  background: rgba(247,238,226,.83);
+  border: 3px double rgba(111,58,78,.17);
+}
+.wedding-site .story-vellum-title {
+  padding-inline: 16px;
+  max-width: 19ch;
+  color: var(--wine);
+}
+
+/* One genuine dark chapter: the announcement should feel like a reveal. */
+.wedding-site .reveal-scene .scene-stage {
+  color: var(--ink-light);
+  background: radial-gradient(circle at 50% 38%, #7a3650 0%, #571e36 61%, #3c1325 100%);
+}
+.wedding-site .reveal-scene .scene-stage::before {
+  background-size: auto 115%;
+  background-position: center;
+  opacity: .32;
+  mix-blend-mode: screen;
+}
+.wedding-site .reveal-scene .reveal-small,
+.wedding-site .reveal-scene .story-body {
+  color: rgba(255,242,234,.84);
+}
+.wedding-site .reveal-scene .reveal-title {
+  color: #fff0e4;
+  text-shadow: 0 8px 40px rgba(28,5,17,.35);
+}
+.wedding-site .reveal-scene .reveal-title::after {
+  content: "";
+  display: block;
+  width: 90px;
+  height: 1px;
+  margin: 27px auto 0;
+  background: rgba(252,229,214,.65);
+}
+.wedding-site .invite-stage {
+  border-top: 1px solid rgba(91,39,57,.22);
+  border-bottom: 1px solid rgba(91,39,57,.22);
+}
+.wedding-site .invite-stage::before { opacity: .09; }
+.wedding-site .invite-date {
+  text-wrap: balance;
+  color: var(--wine);
+}
+
+/* Page ornaments repeat consistently, without turning every surface into a card. */
+.wedding-site .content-section {
+  position: relative;
+  isolation: isolate;
+}
+.wedding-site .section-heading::before,
+.wedding-site .gift-copy::before {
+  content: "✳";
+  display: block;
+  width: fit-content;
+  margin: 0 auto 24px;
+  font-family: var(--font-serif),Georgia,serif;
+  font-size: 27px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--wine);
+}
+.wedding-site .eyebrow,
+.wedding-site .kicker {
+  font-size: 10px;
+  font-weight: 780;
+  letter-spacing: .22em;
+}
+.wedding-site .section-heading h2 {
+  letter-spacing: -.052em;
+  line-height: 1.03;
+}
+.wedding-site .family-section {
+  background: linear-gradient(180deg,#f0e6db,#f7f0e6);
+}
+.wedding-site .family-grid {
+  border: 1px solid rgba(99,46,64,.24);
+  background: rgba(253,249,241,.55);
+  box-shadow: 0 25px 62px rgba(69,27,40,.07);
+}
+.wedding-site .family-card { position: relative; }
+.wedding-site .family-card::after {
+  content: "✳";
+  position: absolute;
+  right: 28px;
+  bottom: 16px;
+  color: rgba(102,37,61,.20);
+  font: italic 35px var(--font-serif), Georgia, serif;
+  pointer-events: none;
+}
+.wedding-site .family-card h3 { font-size: clamp(34px,3.4vw,54px); }
+
+/* Gallery: a dark burgundy spread lets the real photography take the stage. */
+.wedding-site .gallery-section {
+  color: #f8eee6;
+  background:
+    radial-gradient(circle at 6% 25%,rgba(194,139,139,.16),transparent 38%),
+    radial-gradient(circle at 93% 81%,rgba(17,0,9,.24),transparent 46%),
+    #4d1a30;
+}
+.wedding-site .gallery-section::before,
+.wedding-site .closing-section::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background: url("/images/album-cover-relief.svg") center / min(950px,120vw) auto repeat-y;
+  opacity: .075;
+  pointer-events: none;
+}
+.wedding-site .gallery-section > *,
+.wedding-site .closing-section > * { position: relative; z-index: 1; }
+.wedding-site .gallery-section .section-heading::before,
+.wedding-site .gallery-section .eyebrow { color: #f2cfc6; }
+.wedding-site .gallery-section .section-heading h2 { color: #fff1e5; }
+.wedding-site .gallery-section .section-heading > p:last-child { color: rgba(250,233,224,.82); }
+.wedding-site .gallery-toolbar { color: rgba(252,235,225,.76); }
+.wedding-site .gallery-pause {
+  color: #f8ebe1;
+  background: rgba(255,244,227,.1);
+  border-color: rgba(247,221,209,.34);
+  border-radius: 6px;
+}
+.wedding-site .gallery-pause:hover { color: #4d1a30; background:#fbf0e2; }
+.wedding-site .gallery-image {
+  border: 8px solid #ebddcf;
+  border-radius: 5px;
+  box-shadow: 0 18px 38px rgba(16,2,10,.32);
+}
+.wedding-site .gallery-slide figcaption { color: rgba(249,231,219,.77); }
+
+/* Practical information is calm, warm and intentionally very usable. */
+.wedding-site .details-section { background: #f5ecdf; }
+.wedding-site .details-grid { border-color: rgba(102,37,61,.25); }
+.wedding-site .detail-card { position: relative; }
+.wedding-site .detail-number {
+  color: var(--wine);
+  font-size: 40px;
+  font-style: italic;
+  opacity: .9;
+}
+.wedding-site .detail-card a { color: var(--wine); }
+.wedding-site .schedule-row time { color: var(--wine); }
+.wedding-site .rsvp-section {
+  background: linear-gradient(180deg,#f0e7db,#f9f4eb);
+}
+.wedding-site .rsvp-form {
+  background: rgba(255,252,247,.88);
+  border: 1px solid rgba(103,44,61,.23);
+  border-radius: 12px;
+  box-shadow: 0 24px 76px rgba(66,28,42,.10);
+}
+.wedding-site .rsvp-form input,
+.wedding-site .rsvp-form textarea {
+  border-radius: 6px;
+}
+.wedding-site .gifts-section { background:#f9f4eb; }
+.wedding-site .gift-card {
+  border-radius: 10px;
+  background: #fffbf5;
+  box-shadow: 0 14px 40px rgba(72,30,45,.065);
+}
+.wedding-site .gift-copy::before { margin-bottom: 16px; }
+.wedding-site .faq-section { background:#f0e5d8; }
+.wedding-site .faq-list summary { line-height: 1.2; }
+.wedding-site .closing-section {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: #fff1e6;
+  background: radial-gradient(ellipse at 50% 34%, #7a3550, #49162b 72%);
+}
+.wedding-site .closing-section > p { color: rgba(252,230,217,.84); }
+.wedding-site .closing-section > h2 { color: #fff0e6; }
+.wedding-site .closing-section > span { color: #edc2ba; }
+.wedding-site .button { border-radius: 8px; }
+.wedding-site .button-primary {
+  background: var(--wine);
+  border-color: var(--wine);
+  box-shadow: 0 10px 24px rgba(74,25,44,.14);
+}
+.wedding-site .mobile-dock {
+  border-radius: 10px;
+  background: rgba(253,247,238,.97);
+  box-shadow: 0 12px 35px rgba(70,31,43,.18);
+}
+.wedding-site .mobile-dock a,
+.wedding-site .mobile-dock button { border-radius: 6px; }
+.wedding-site .quick-nav {
+  border-radius: 9px;
+  background: rgba(252,245,234,.96);
+}
+.wedding-site .quick-nav a { border-radius: 6px; }
+
+/* Keep the new brand readable on compact phones and respect motion settings. */
+@media (max-width:820px) {
+  .wedding-site .scene-stage { padding: 75px 20px 96px; }
+  .wedding-site .intro-scene .scene-stage { padding-block: 56px 92px; }
+  .wedding-site .story-scene .scene-stage { padding-block: 87px 90px; }
+  .wedding-site .story-photo {
+    width: min(265px,64vw);
+    border-width: 7px;
+    outline-offset: 4px;
+  }
+  .wedding-site .story-scene .display-title { line-height: .97; }
+  .wedding-site .story-body {
+    max-width: 35ch;
+    margin: 16px auto 0;
+    line-height: 1.48;
+  }
+  .chapter-folio { margin-bottom: 12px; font-size: 9px; }
+  .wedding-site .family-grid { border-radius: 0; }
+  .wedding-site .family-card::after { font-size: 26px; }
+  .wedding-site .gallery-image { border-width: 6px; }
+  .wedding-site .gallery-section::before,
+  .wedding-site .closing-section::before { background-size: 150vw auto; }
+  .wedding-site .reveal-scene .scene-stage::before { background-size: auto 80%; }
+  .wedding-site .mobile-dock { min-height: 70px; }
+  .wedding-site .section-heading::before { margin-bottom: 17px; }
+}
+@media (max-width:820px) and (max-height:720px) {
+  .wedding-site .story-scene .scene-stage,
+  .wedding-site .invite-scene .scene-stage {
+    position: relative;
+    top: auto;
+    min-height: 100svh;
+    overflow: visible;
+  }
+  .wedding-site .story-scene .scene-stage::before { opacity: .025; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .wedding-site .scene-stage,
+  .wedding-site .story-scene .scene-stage,
+  .wedding-site .invite-scene .scene-stage {
+    position: relative !important;
+    min-height: auto !important;
+  }
+  .wedding-site .intro-scene,
+  .wedding-site .story-scene,
+  .wedding-site .reveal-scene,
+  .wedding-site .invite-scene { min-height: auto !important; }
+}
+
+/* Gallery photographs should be visible within the first screen on desktop,
+   not hidden beneath a giant top margin or a GSAP opacity gate. */
+@media (min-width:821px) {
+  .wedding-site .gallery-section {
+    padding-top: clamp(60px,6vw,88px);
+  }
+  .wedding-site .gallery-section .section-heading::before { margin-bottom: 13px; }
+  .wedding-site .gallery-section .section-heading h2 { font-size: clamp(60px,5.3vw,82px); }
+  .wedding-site .gallery-section .section-heading > p:last-child { margin-top: 13px; }
+  .wedding-site .gallery-section .gallery-toolbar { margin-top: 23px; }
+  .wedding-site .gallery-section .gallery-marquee { margin-top: 12px; }
 }
 
 /* Linked RSVP with wedding platform */
