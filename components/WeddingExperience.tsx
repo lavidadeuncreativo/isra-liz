@@ -16,10 +16,10 @@ type SubmitState = "idle" | "loading" | "success" | "error";
 type GiftModalMode = "info" | "contribution" | null;
 
 const QUICK_LINKS = [
-  { href: "#historia", label: "Historia" },
+  { href: "#historia", label: "Nuestra historia" },
+  { href: "#galeria", label: "Fotos" },
   { href: "#detalles", label: "El gran día" },
   { href: "#rsvp", label: "Confirmar" },
-  { href: "#regalos", label: "Regalos" },
 ] as const;
 
 function WordPieces({ text }: { text: string }) {
@@ -208,6 +208,10 @@ function StoryScene({
 
 export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnly = false }: Props) {
   const rootRef = useRef<HTMLElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [galleryPaused, setGalleryPaused] = useState(false);
+  const [activeSection, setActiveSection] = useState("inicio");
   const audioRef = useRef<HTMLAudioElement>(null);
   const [entered, setEntered] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
@@ -241,6 +245,47 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
 
     return () => window.clearInterval(timer);
   }, [entered]);
+
+  // Paint the progress bar without a React re-render on every scroll frame.
+  useEffect(() => {
+    if (!entered) return;
+    let raf = 0;
+    let lastSection = "";
+    const paint = () => {
+      raf = 0;
+      const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      const fraction = maxScroll ? Math.min(1, Math.max(0, window.scrollY / maxScroll)) : 0;
+      if (progressRef.current) progressRef.current.style.transform = `scaleX(${fraction})`;
+      let section = "inicio";
+      for (const anchor of ["inicio", "historia", "galeria", "detalles", "rsvp", "regalos", "faq"]) {
+        const el = document.getElementById(anchor);
+        if (el && el.getBoundingClientRect().top <= window.innerHeight * 0.42) section = anchor;
+      }
+      if (section !== lastSection) {
+        lastSection = section;
+        setActiveSection(section);
+      }
+    };
+    const schedule = () => { if (!raf) raf = window.requestAnimationFrame(paint); };
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    void document.fonts?.ready.then(schedule);
+    schedule();
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      if (raf) window.cancelAnimationFrame(raf);
+    };
+  }, [entered]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const dismiss = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", dismiss);
+    return () => window.removeEventListener("keydown", dismiss);
+  }, [menuOpen]);
 
   useLayoutEffect(() => {
     const root = rootRef.current;
@@ -590,6 +635,9 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
   const isNotAttending = attendance === "No podre asistir";
   const hasMap = Boolean(data.venue.mapUrl);
   const hasAudio = data.audio.enabled;
+  // Show a church route only when the verified URL exists in the wedding data.
+  const churchMapUrl = "churchMapUrl" in data.venue && typeof data.venue.churchMapUrl === "string"
+    ? data.venue.churchMapUrl.trim() : "";
 
   const registryLinks = data.gifting.registries.map((registry) => {
     if (registry.label === "Palacio de Hierro") {
@@ -616,7 +664,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
       <div className={`entry-screen ${entered ? "is-hidden" : ""}`} role="dialog" aria-modal="true" aria-label="Abrir invitacion">
         <div className="paper-noise" aria-hidden="true" />
         <div className="entry-content">
-          <p className="eyebrow">Tenemos algo que contarte</p>
+          <p className="eyebrow">Una invitación muy nuestra</p>
           <h1>
             <span>{data.couple.partnerOne}</span>
             <em>&</em>
@@ -639,16 +687,60 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
       )}
 
       {entered && (
-        <nav className="quick-nav" aria-label="Atajos de la invitacion">
-          {QUICK_LINKS.map((link) => (
-            <a key={link.href} href={link.href}>
-              {link.label}
+        <>
+          <div className="scroll-progress" aria-hidden="true">
+            <div ref={progressRef} className="scroll-progress-line" />
+          </div>
+          <nav className="quick-nav desktop-nav" aria-label="Navegación de la invitación">
+            <a className="quick-nav-brand" href="#inicio" aria-label="Ir al inicio">Isra <span>&</span> Liz</a>
+            {QUICK_LINKS.map((link) => (
+              <a key={link.href} href={link.href} aria-current={activeSection === link.href.slice(1) ? "location" : undefined}>
+                {link.label}
+              </a>
+            ))}
+            <a className="quick-nav-map" href={data.venue.mapUrl} target="_blank" rel="noopener noreferrer">Cómo llegar ↗</a>
+          </nav>
+          <nav className="mobile-dock" aria-label="Accesos rápidos">
+            <a href="#inicio" aria-current={activeSection === "inicio" ? "location" : undefined} onClick={() => setMenuOpen(false)}>
+              <span className="dock-symbol" aria-hidden="true">✳</span><span>Inicio</span>
             </a>
-          ))}
-        </nav>
-      )}
+            <a href={data.venue.mapUrl} target="_blank" rel="noopener noreferrer">
+              <span className="dock-symbol" aria-hidden="true">↗</span><span>Cómo llegar</span>
+            </a>
+            <a href="#rsvp" aria-current={activeSection === "rsvp" ? "location" : undefined} onClick={() => setMenuOpen(false)}>
+              <span className="dock-symbol" aria-hidden="true">✓</span><span>Confirmar</span>
+            </a>
+            <button type="button" aria-controls="mobile-navigation-more" aria-expanded={menuOpen} onClick={() => setMenuOpen(current => !current)}>
+              <span className="dock-symbol" aria-hidden="true">{menuOpen ? "×" : "☰"}</span><span>{menuOpen ? "Cerrar" : "Menú"}</span>
+            </button>
+          </nav>
+          {menuOpen ? (
+            <div className="mobile-menu-layer" id="mobile-navigation-more">
+              <button className="mobile-menu-scrim" type="button" aria-label="Cerrar el menú" onClick={() => setMenuOpen(false)} />
+              <nav className="mobile-menu-panel" aria-label="Todas las secciones">
+                <span className="mobile-menu-kicker">Isra & Liz · 20 de febrero de 2027</span>
+                <a href="#historia" onClick={() => setMenuOpen(false)}>Nuestra historia <span aria-hidden="true">01</span></a>
+                <a href="#galeria" onClick={() => setMenuOpen(false)}>Nuestras fotos <span aria-hidden="true">02</span></a>
+                <a href="#detalles" onClick={() => setMenuOpen(false)}>Horarios y detalles <span aria-hidden="true">03</span></a>
+                <a href="#rsvp" onClick={() => setMenuOpen(false)}>Confirma tu asistencia <span aria-hidden="true">04</span></a>
+                <a href="#regalos" onClick={() => setMenuOpen(false)}>Mesa de regalos <span aria-hidden="true">05</span></a>
+                <a href="#faq" onClick={() => setMenuOpen(false)}>Preguntas frecuentes <span aria-hidden="true">06</span></a>
+                <a href={data.venue.mapUrl} target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>
+                  Cómo llegar al salón <span aria-hidden="true">↗</span>
+                </a>
+                {churchMapUrl ? (
+                  <a href={churchMapUrl} target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>
+                    Cómo llegar a la iglesia <span aria-hidden="true">↗</span>
+                  </a>
+                ) : null}
+                <span className="mobile-menu-note">Nos va a encantar verte ahí.</span>
+              </nav>
+            </div>
+          ) : null}
+        </>
+      )
 
-      <section className="intro-scene" data-intro-scene>
+      <section id="inicio" className="intro-scene" data-intro-scene>
         <div className="scene-stage intro-stage">
           <div className="paper-noise" aria-hidden="true" />
           <div className="intro-shell" data-hero-orbit>
