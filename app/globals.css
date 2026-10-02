@@ -2374,6 +2374,19 @@ html { scroll-behavior: auto; }
   .wedding-site .invite-scene { min-height: auto !important; }
 }
 
+/* Gallery photographs should be visible within the first screen on desktop,
+   not hidden beneath a giant top margin or a GSAP opacity gate. */
+@media (min-width:821px) {
+  .wedding-site .gallery-section {
+    padding-top: clamp(60px,6vw,88px);
+  }
+  .wedding-site .gallery-section .section-heading::before { margin-bottom: 13px; }
+  .wedding-site .gallery-section .section-heading h2 { font-size: clamp(60px,5.3vw,82px); }
+  .wedding-site .gallery-section .section-heading > p:last-child { margin-top: 13px; }
+  .wedding-site .gallery-section .gallery-toolbar { margin-top: 23px; }
+  .wedding-site .gallery-section .gallery-marquee { margin-top: 12px; }
+}
+
 /* Linked RSVP with wedding platform */
 .linked-rsvp-form .linked-household-intro{
   padding:20px;
