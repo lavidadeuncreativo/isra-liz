@@ -16,7 +16,7 @@ function findChrome() {
   throw new Error("Chrome no está disponible en el runner");
 }
 const browser = spawn(findChrome(), [
-  "--headless=new", "--no-sandbox", "--disable-gpu",
+  "--headless=new", "--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage",
   "--no-first-run", "--no-default-browser-check",
   "--remote-debugging-port=9222", "--user-data-dir=" + profile,
   "about:blank",
@@ -30,7 +30,7 @@ function assert(ok, detail) { if (!ok) throw new Error("Browser QA: " + detail);
 
 async function connect() {
   let page;
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 120; i++) {
     try {
       const res = await fetch("http://127.0.0.1:9222/json");
       page = (await res.json()).find((p) => p.type === "page");
