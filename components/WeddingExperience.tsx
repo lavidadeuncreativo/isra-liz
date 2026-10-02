@@ -206,21 +206,6 @@ function StoryScene({
   );
 }
 
-type ScrubRevealOptions = {
-  end?: string;
-  hold?: number;
-  fromBlur?: number;
-  fromScale?: number;
-  fromY?: number;
-  fromRotateX?: number;
-  fromSkewY?: number;
-  outBlur?: number;
-  outOpacity?: number;
-  outScale?: number;
-  outY?: number;
-  stagger?: number;
-};
-
 export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnly = false }: Props) {
   const rootRef = useRef<HTMLElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
