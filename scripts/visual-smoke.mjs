@@ -116,6 +116,7 @@ async function inspect(width, height, reduced = false) {
 
   const intro = await evaluate("({visibility:getComputedStyle(document.querySelector('.intro-title .reveal-word')).visibility,opacity:Number(getComputedStyle(document.querySelector('.intro-title .reveal-word')).opacity)})");
   assert(intro.visibility !== "hidden" && intro.opacity > 0.85, width + "px: portada oculta");
+  await screenshot(reduced ? "cover-reduced.png" : "cover-" + width + ".png");
 
   const ui = await evaluate("(() => { const dock=document.querySelector('.mobile-dock'); const bar=document.querySelector('.scroll-progress-line'); return {dock:getComputedStyle(dock).display, tabs:dock.querySelectorAll('a,button').length, bar:!!bar, church:!!document.querySelector('.mobile-menu-panel a[href*=\"church\"]')}; })()");
   assert(ui.bar, "No se encontró la barra de progreso");
@@ -183,6 +184,10 @@ async function inspect(width, height, reduced = false) {
     assert(await evaluate("getComputedStyle(document.querySelector('.gallery-track')).animationPlayState === 'running'"),
       width + "px: no se pudo reanudar el carrusel");
   }
+
+  await evaluate("document.querySelector('#galeria').scrollIntoView({block:'start',behavior:'instant'});true");
+  await sleep(850);
+  await screenshot(reduced ? "gallery-reduced.png" : "gallery-" + width + ".png");
 
   await evaluate("document.querySelector('#rsvp').scrollIntoView({block:'start',behavior:'instant'}); true");
   await sleep(600);
