@@ -16,10 +16,10 @@ type SubmitState = "idle" | "loading" | "success" | "error";
 type GiftModalMode = "info" | "contribution" | null;
 
 const QUICK_LINKS = [
-  { href: "#historia", label: "Historia" },
+  { href: "#historia", label: "Nuestra historia" },
+  { href: "#galeria", label: "Fotos" },
   { href: "#detalles", label: "El gran día" },
   { href: "#rsvp", label: "Confirmar" },
-  { href: "#regalos", label: "Regalos" },
 ] as const;
 
 function WordPieces({ text }: { text: string }) {
@@ -208,6 +208,10 @@ function StoryScene({
 
 export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnly = false }: Props) {
   const rootRef = useRef<HTMLElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [galleryPaused, setGalleryPaused] = useState(false);
+  const [activeSection, setActiveSection] = useState("inicio");
   const audioRef = useRef<HTMLAudioElement>(null);
   const [entered, setEntered] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
@@ -241,6 +245,47 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
 
     return () => window.clearInterval(timer);
   }, [entered]);
+
+  // Paint the progress bar without a React re-render on every scroll frame.
+  useEffect(() => {
+    if (!entered) return;
+    let raf = 0;
+    let lastSection = "";
+    const paint = () => {
+      raf = 0;
+      const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      const fraction = maxScroll ? Math.min(1, Math.max(0, window.scrollY / maxScroll)) : 0;
+      if (progressRef.current) progressRef.current.style.transform = `scaleX(${fraction})`;
+      let section = "inicio";
+      for (const anchor of ["inicio", "historia", "galeria", "detalles", "rsvp", "regalos", "faq"]) {
+        const el = document.getElementById(anchor);
+        if (el && el.getBoundingClientRect().top <= window.innerHeight * 0.42) section = anchor;
+      }
+      if (section !== lastSection) {
+        lastSection = section;
+        setActiveSection(section);
+      }
+    };
+    const schedule = () => { if (!raf) raf = window.requestAnimationFrame(paint); };
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    void document.fonts?.ready.then(schedule);
+    schedule();
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      if (raf) window.cancelAnimationFrame(raf);
+    };
+  }, [entered]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const dismiss = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", dismiss);
+    return () => window.removeEventListener("keydown", dismiss);
+  }, [menuOpen]);
 
   useLayoutEffect(() => {
     const root = rootRef.current;
@@ -432,35 +477,69 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
               .to({}, { duration: 0.01 }, 1);
           });
 
+          // Narrative information returns to the original blur-appear /
+          // blur-disappear behavior. Interactive content never fades away.
           root.querySelectorAll<HTMLElement>("[data-reveal-section]").forEach((section) => {
-            // Forms, accordions and their feedback must never scroll-disappear.
-            // Give informational headings a single editorial entrance instead.
-            const items = section.matches(".rsvp-section, .gifts-section, .faq-section")
+            const interactiveSection = section.matches(".rsvp-section, .gifts-section, .faq-section");
+            const items = interactiveSection
               ? section.querySelectorAll<HTMLElement>(".section-heading")
               : section.querySelectorAll<HTMLElement>("[data-reveal-item]");
 
             items.forEach((item) => {
-              if (item.matches("form, details") || item.querySelector("form, input, textarea, button")) return;
+              const hasControls = Boolean(item.querySelector("form, input, textarea, button, a[href]"));
+              if (item.matches("form, details") || hasControls) return;
 
-              gsap.fromTo(item, {
+              const fadeOnLeave = !interactiveSection && (
+                item.matches(".section-heading, .family-card") ||
+                (item.matches(".detail-card") && !item.querySelector("a[href]"))
+              );
+
+              const from = {
                 autoAlpha: 0,
-                y: isMobile ? 36 : 52,
-                filter: "blur(12px)",
-                rotateX: 9,
-              }, {
-                autoAlpha: 1,
-                y: 0,
-                filter: "blur(0px)",
-                rotateX: 0,
-                duration: 0.95,
-                ease: "power3.out",
+                y: isMobile ? 34 : 49,
+                filter: `blur(${isMobile ? 9 : 15}px)`,
+                rotateX: isMobile ? 4 : 11,
+                transformOrigin: "50% 100%",
+              };
+              if (!fadeOnLeave) {
+                gsap.fromTo(item, from, {
+                  autoAlpha: 1, y: 0, filter: "blur(0px)", rotateX: 0,
+                  duration: 0.95,
+                  ease: "power3.out",
+                  scrollTrigger: {
+                    trigger: item,
+                    start: "top 94%",
+                    once: true,
+                    invalidateOnRefresh: true,
+                  },
+                });
+                return;
+              }
+
+              const sequence = gsap.timeline({
+                defaults: { ease: "none" },
                 scrollTrigger: {
                   trigger: item,
-                  start: "top 92%",
-                  once: true,
+                  start: "top 98%",
+                  end: "bottom 3%",
+                  scrub: isMobile ? 0.18 : 0.28,
                   invalidateOnRefresh: true,
                 },
               });
+
+              sequence
+                .fromTo(item, from, {
+                  autoAlpha: 1, y: 0, filter: "blur(0px)",
+                  rotateX: 0, duration: 0.23,
+                }, 0)
+                .to({}, { duration: 0.50 }, 0.24)
+                .to(item, {
+                  autoAlpha: 0,
+                  y: -24,
+                  filter: `blur(${isMobile ? 8 : 13}px)`,
+                  duration: 0.15,
+                }, 0.85)
+                .to({}, { duration: 0.01 }, 1);
             });
           });
 
@@ -590,6 +669,9 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
   const isNotAttending = attendance === "No podre asistir";
   const hasMap = Boolean(data.venue.mapUrl);
   const hasAudio = data.audio.enabled;
+  // Show a church route only when the verified URL exists in the wedding data.
+  const churchMapUrl = "churchMapUrl" in data.venue && typeof data.venue.churchMapUrl === "string"
+    ? data.venue.churchMapUrl.trim() : "";
 
   const registryLinks = data.gifting.registries.map((registry) => {
     if (registry.label === "Palacio de Hierro") {
@@ -616,7 +698,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
       <div className={`entry-screen ${entered ? "is-hidden" : ""}`} role="dialog" aria-modal="true" aria-label="Abrir invitacion">
         <div className="paper-noise" aria-hidden="true" />
         <div className="entry-content">
-          <p className="eyebrow">Tenemos algo que contarte</p>
+          <p className="eyebrow">Una invitación muy nuestra</p>
           <h1>
             <span>{data.couple.partnerOne}</span>
             <em>&</em>
@@ -639,16 +721,60 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
       )}
 
       {entered && (
-        <nav className="quick-nav" aria-label="Atajos de la invitacion">
-          {QUICK_LINKS.map((link) => (
-            <a key={link.href} href={link.href}>
-              {link.label}
+        <>
+          <div className="scroll-progress" aria-hidden="true">
+            <div ref={progressRef} className="scroll-progress-line" />
+          </div>
+          <nav className="quick-nav desktop-nav" aria-label="Navegación de la invitación">
+            <a className="quick-nav-brand" href="#inicio" aria-label="Ir al inicio">Isra <span>&</span> Liz</a>
+            {QUICK_LINKS.map((link) => (
+              <a key={link.href} href={link.href} aria-current={activeSection === link.href.slice(1) ? "location" : undefined}>
+                {link.label}
+              </a>
+            ))}
+            <a className="quick-nav-map" href={data.venue.mapUrl} target="_blank" rel="noopener noreferrer">Cómo llegar ↗</a>
+          </nav>
+          <nav className="mobile-dock" aria-label="Accesos rápidos">
+            <a href="#inicio" aria-current={activeSection === "inicio" ? "location" : undefined} onClick={() => setMenuOpen(false)}>
+              <span className="dock-symbol" aria-hidden="true">✳</span><span>Inicio</span>
             </a>
-          ))}
-        </nav>
+            <a href={data.venue.mapUrl} target="_blank" rel="noopener noreferrer">
+              <span className="dock-symbol" aria-hidden="true">↗</span><span>Cómo llegar</span>
+            </a>
+            <a href="#rsvp" aria-current={activeSection === "rsvp" ? "location" : undefined} onClick={() => setMenuOpen(false)}>
+              <span className="dock-symbol" aria-hidden="true">✓</span><span>Confirmar</span>
+            </a>
+            <button type="button" aria-controls="mobile-navigation-more" aria-expanded={menuOpen} onClick={() => setMenuOpen(current => !current)}>
+              <span className="dock-symbol" aria-hidden="true">{menuOpen ? "×" : "☰"}</span><span>{menuOpen ? "Cerrar" : "Menú"}</span>
+            </button>
+          </nav>
+          {menuOpen ? (
+            <div className="mobile-menu-layer" id="mobile-navigation-more">
+              <button className="mobile-menu-scrim" type="button" aria-label="Cerrar el menú" onClick={() => setMenuOpen(false)} />
+              <nav className="mobile-menu-panel" aria-label="Todas las secciones">
+                <span className="mobile-menu-kicker">Isra & Liz · 20 de febrero de 2027</span>
+                <a href="#historia" onClick={() => setMenuOpen(false)}>Nuestra historia <span aria-hidden="true">01</span></a>
+                <a href="#galeria" onClick={() => setMenuOpen(false)}>Nuestras fotos <span aria-hidden="true">02</span></a>
+                <a href="#detalles" onClick={() => setMenuOpen(false)}>Horarios y detalles <span aria-hidden="true">03</span></a>
+                <a href="#rsvp" onClick={() => setMenuOpen(false)}>Confirma tu asistencia <span aria-hidden="true">04</span></a>
+                <a href="#regalos" onClick={() => setMenuOpen(false)}>Mesa de regalos <span aria-hidden="true">05</span></a>
+                <a href="#faq" onClick={() => setMenuOpen(false)}>Preguntas frecuentes <span aria-hidden="true">06</span></a>
+                <a href={data.venue.mapUrl} target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>
+                  Cómo llegar al salón <span aria-hidden="true">↗</span>
+                </a>
+                {churchMapUrl ? (
+                  <a href={churchMapUrl} target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>
+                    Cómo llegar a la iglesia <span aria-hidden="true">↗</span>
+                  </a>
+                ) : null}
+                <span className="mobile-menu-note">Nos va a encantar verte ahí.</span>
+              </nav>
+            </div>
+          ) : null}
+        </>
       )}
 
-      <section className="intro-scene" data-intro-scene>
+      <section id="inicio" className="intro-scene" data-intro-scene>
         <div className="scene-stage intro-stage">
           <div className="paper-noise" aria-hidden="true" />
           <div className="intro-shell" data-hero-orbit>
@@ -752,8 +878,8 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
 
       <section className="content-section family-section" data-reveal-section>
         <div className="section-heading" data-reveal-item>
-          <p className="eyebrow">Con la alegria de nuestras familias</p>
-          <h2>Nos acompanan en este dia.</h2>
+          <p className="eyebrow">Con nuestras familias</p>
+          <h2>Y con quienes nos trajeron hasta aquí.</h2>
         </div>
         <div className="family-grid">
           <article className="family-card" data-reveal-item>
@@ -777,19 +903,29 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
 
       <section id="galeria" className="content-section gallery-section" data-reveal-section>
         <div className="section-heading" data-reveal-item>
-          <p className="eyebrow">Lo que hemos vivido</p>
-          <h2>Una historia hecha de muchos momentos.</h2>
-          <p>Algunos de nuestros momentos favoritos.</p>
+          <p className="eyebrow">Un álbum de los dos</p>
+          <h2>Así se ve nuestra historia.</h2>
+          <p>Unos momentos que nos gusta volver a mirar.</p>
         </div>
-        <div className="gallery-marquee" data-reveal-item>
+        <div className="gallery-toolbar">
+          <span>Seis fotos, muchas historias.</span>
+          <button type="button" className="gallery-pause" aria-pressed={galleryPaused} onClick={() => setGalleryPaused(value => !value)}>
+            <span aria-hidden="true">{galleryPaused ? "▶" : "Ⅱ"}</span> {galleryPaused ? "Reanudar" : "Pausar fotos"}
+          </button>
+        </div>
+        <div className={`gallery-marquee ${galleryPaused ? "is-paused" : ""}`} data-reveal-item>
           <div className="gallery-track">
-            {[...data.gallery, ...data.gallery, ...data.gallery].map((item, index) => (
-              <figure className="gallery-slide" key={`${item.src}-${index}`} aria-hidden={index >= data.gallery.length}>
-                <div className="gallery-image">
-                  <Image src={item.src} alt={item.alt} fill sizes="(max-width: 820px) 72vw, 360px" />
-                </div>
-                <figcaption>{item.caption}</figcaption>
-              </figure>
+            {[0, 1].map((repeat) => (
+              <div className="gallery-loop-group" key={repeat} aria-hidden={repeat === 1}>
+                {data.gallery.map((item) => (
+                  <figure className="gallery-slide" key={`${repeat}-${item.src}`}>
+                    <div className="gallery-image">
+                      <Image src={item.src} alt={repeat === 0 ? item.alt : ""} fill sizes="(max-width: 820px) 72vw, 360px" />
+                    </div>
+                    <figcaption>{item.caption}</figcaption>
+                  </figure>
+                ))}
+              </div>
             ))}
           </div>
         </div>
@@ -797,16 +933,14 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
 
       <section id="detalles" className="content-section details-section" data-reveal-section>
         <div className="section-heading" data-reveal-item>
-          <p className="eyebrow">Asi se vivira el dia</p>
-          <h2>Itinerario</h2>
-          <p>Todo lo importante, en un vistazo para que te sea facil ubicarte.</p>
+          <p className="eyebrow">Para que no se te pase nada</p>
+          <h2>El día, de principio a fin.</h2>
+          <p>Guarda esta información; nos vemos en Uruapan.</p>
         </div>
         <div className="details-grid details-grid-compact">
-          {data.essentials.map((item) => (
+          {data.essentials.map((item, index) => (
             <article className="detail-card" data-reveal-item key={item.label}>
-              <div className="detail-visual" aria-hidden="true">
-                <span>{item.visual}</span>
-              </div>
+              <span className="detail-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
               <small>{item.label}</small>
               <h3>{item.title}</h3>
               <p>{item.body}</p>
@@ -832,8 +966,8 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
       <section id="rsvp" className="content-section rsvp-section" data-reveal-section>
         <div className="section-heading" data-reveal-item>
           <p className="eyebrow">Confirma tu asistencia</p>
-          <h2>Queremos contar contigo.</h2>
-          <p>Tu respuesta nos ayudará a preparar todo para recibirte.</p>
+          <h2>¿Nos acompañas?</h2>
+          <p>Confírmanos aquí para que tengamos todo listo para ti.</p>
         </div>
         {linkedHousehold ? <form className="rsvp-form linked-rsvp-form" onSubmit={submitRsvp} data-reveal-item>
           <div className="linked-household-intro">
@@ -938,7 +1072,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
       <section id="faq" className="content-section faq-section" data-reveal-section>
         <div className="section-heading" data-reveal-item>
           <p className="eyebrow">Preguntas frecuentes</p>
-          <h2>Por si te lo preguntabas.</h2>
+          <h2>Por si te sirve saberlo.</h2>
         </div>
         <div className="faq-list">
           {data.faq.map((item) => (
