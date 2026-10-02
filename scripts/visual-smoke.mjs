@@ -161,8 +161,9 @@ async function inspect(width, height, reduced = false) {
 
   // Two visually identical groups permit an uninterrupted half-track loop.
   const loop = await evaluate("(() => { const groups=[...document.querySelectorAll('.gallery-loop-group')]; return {length:groups.length,first:groups[0]?.getBoundingClientRect().width,second:groups[1]?.getBoundingClientRect().width,animation:getComputedStyle(document.querySelector('.gallery-track')).animationName};})()");
-  assert(loop.length === 2 && Math.abs(loop.first-loop.second) < 1, width + "px: la galería no tiene dos ciclos iguales");
+  assert(loop.length === 2, width + "px: faltan ciclos de galería");
   if (!reduced) {
+    assert(Math.abs(loop.first-loop.second) < 1, width + "px: la galería no tiene dos ciclos iguales");
     assert(loop.animation !== "none", width + "px: carrusel sin animación");
     await evaluate("document.querySelector('.gallery-pause').click();true");
     await sleep(180);
