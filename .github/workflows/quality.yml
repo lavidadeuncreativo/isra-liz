@@ -51,3 +51,28 @@ jobs:
           done
           cat /tmp/isra-liz-next.log
           exit 1
+
+      - name: Verificar scroll y RSVP en Chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm start --port 3000 > /tmp/isra-liz-browser.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3000/ -o /dev/null; then
+              node scripts/visual-smoke.mjs
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/isra-liz-browser.log
+          exit 1
+
+      - name: Guardar capturas de QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas-invitacion
+          path: qa-screenshots/*.png
+          if-no-files-found: ignore
