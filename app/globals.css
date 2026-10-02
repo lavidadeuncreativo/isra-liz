@@ -1424,9 +1424,10 @@ summary:focus-visible {
   .scene-stage { padding: 64px 18px 28px; }
   .story-scene .scene-stage,
   .invite-scene .scene-stage {
-    position: relative;
+    position: sticky;
+    top: 0;
     min-height: 100svh;
-    overflow: visible;
+    overflow: hidden;
   }
   .story-scene .scene-layout { gap: 16px; }
   .story-scene .display-title { font-size: clamp(38px, 10.8vw, 58px); }
@@ -1759,6 +1760,19 @@ summary:focus-visible {
 /* People who pause motion, or ask for reduced motion, can still browse all
    six real photos horizontally without an automatic animation. */
 @media (prefers-reduced-motion: reduce) {
+  .intro-scene,
+  .story-scene,
+  .reveal-scene,
+  .invite-scene { min-height: auto !important; }
+  .scene-stage,
+  .intro-stage,
+  .story-scene .scene-stage,
+  .invite-scene .scene-stage {
+    position: relative !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    padding-block: clamp(82px, 14vw, 150px);
+  }
   .gallery-track,
   .mobile-menu-panel { animation: none !important; }
   .gallery-marquee {
