@@ -90,7 +90,17 @@ async function inspect(width, height, reduced = false) {
   await send("Page.navigate", { url });
   await sleep(350);
   await until("document.readyState === 'complete' && !!document.querySelector('.entry-actions button')", "portada");
-  await evaluate("document.documentElement.style.scrollBehavior = 'auto'; document.querySelector('.entry-actions button:last-of-type').click(); true");
+  await evaluate("document.documentElement.style.scrollBehavior = 'auto'; true");
+  // SSR can finish before React hydration has attached click handlers.
+  // Never interpret a missed entry click as a motion failure.
+  let opened = false;
+  for (let attempt = 0; attempt < 15; attempt++) {
+    await evaluate("document.querySelector('.entry-actions button:last-of-type').click(); true");
+    await sleep(120);
+    opened = await evaluate("document.querySelector('.wedding-site').classList.contains('entered')");
+    if (opened) break;
+  }
+  assert(opened, width + "px: no se pudo abrir la invitación tras la hidratación de React");
 
   // Visibility by itself is insufficient: the old test missed that the
   // headline entrance had finished behind the 700ms opening overlay.
