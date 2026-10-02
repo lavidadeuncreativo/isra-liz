@@ -844,8 +844,8 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
 
       <section className="content-section family-section" data-reveal-section>
         <div className="section-heading" data-reveal-item>
-          <p className="eyebrow">Con la alegria de nuestras familias</p>
-          <h2>Nos acompanan en este dia.</h2>
+          <p className="eyebrow">Con nuestras familias</p>
+          <h2>Y con quienes nos trajeron hasta aquí.</h2>
         </div>
         <div className="family-grid">
           <article className="family-card" data-reveal-item>
@@ -869,19 +869,29 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
 
       <section id="galeria" className="content-section gallery-section" data-reveal-section>
         <div className="section-heading" data-reveal-item>
-          <p className="eyebrow">Lo que hemos vivido</p>
-          <h2>Una historia hecha de muchos momentos.</h2>
-          <p>Algunos de nuestros momentos favoritos.</p>
+          <p className="eyebrow">Un álbum de los dos</p>
+          <h2>Así se ve nuestra historia.</h2>
+          <p>Unos momentos que nos gusta volver a mirar.</p>
         </div>
-        <div className="gallery-marquee" data-reveal-item>
+        <div className="gallery-toolbar">
+          <span>Seis fotos, muchas historias.</span>
+          <button type="button" className="gallery-pause" aria-pressed={galleryPaused} onClick={() => setGalleryPaused(value => !value)}>
+            <span aria-hidden="true">{galleryPaused ? "▶" : "Ⅱ"}</span> {galleryPaused ? "Reanudar" : "Pausar fotos"}
+          </button>
+        </div>
+        <div className={`gallery-marquee ${galleryPaused ? "is-paused" : ""}`} data-reveal-item>
           <div className="gallery-track">
-            {[...data.gallery, ...data.gallery, ...data.gallery].map((item, index) => (
-              <figure className="gallery-slide" key={`${item.src}-${index}`} aria-hidden={index >= data.gallery.length}>
-                <div className="gallery-image">
-                  <Image src={item.src} alt={item.alt} fill sizes="(max-width: 820px) 72vw, 360px" />
-                </div>
-                <figcaption>{item.caption}</figcaption>
-              </figure>
+            {[0, 1].map((repeat) => (
+              <div className="gallery-loop-group" key={repeat} aria-hidden={repeat === 1}>
+                {data.gallery.map((item) => (
+                  <figure className="gallery-slide" key={`${repeat}-${item.src}`}>
+                    <div className="gallery-image">
+                      <Image src={item.src} alt={repeat === 0 ? item.alt : ""} fill sizes="(max-width: 820px) 72vw, 360px" />
+                    </div>
+                    <figcaption>{item.caption}</figcaption>
+                  </figure>
+                ))}
+              </div>
             ))}
           </div>
         </div>
@@ -889,16 +899,14 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
 
       <section id="detalles" className="content-section details-section" data-reveal-section>
         <div className="section-heading" data-reveal-item>
-          <p className="eyebrow">Asi se vivira el dia</p>
-          <h2>Itinerario</h2>
-          <p>Todo lo importante, en un vistazo para que te sea facil ubicarte.</p>
+          <p className="eyebrow">Para que no se te pase nada</p>
+          <h2>El día, de principio a fin.</h2>
+          <p>Guarda esta información; nos vemos en Uruapan.</p>
         </div>
         <div className="details-grid details-grid-compact">
-          {data.essentials.map((item) => (
+          {data.essentials.map((item, index) => (
             <article className="detail-card" data-reveal-item key={item.label}>
-              <div className="detail-visual" aria-hidden="true">
-                <span>{item.visual}</span>
-              </div>
+              <span className="detail-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
               <small>{item.label}</small>
               <h3>{item.title}</h3>
               <p>{item.body}</p>
@@ -924,8 +932,8 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
       <section id="rsvp" className="content-section rsvp-section" data-reveal-section>
         <div className="section-heading" data-reveal-item>
           <p className="eyebrow">Confirma tu asistencia</p>
-          <h2>Queremos contar contigo.</h2>
-          <p>Tu respuesta nos ayudará a preparar todo para recibirte.</p>
+          <h2>¿Nos acompañas?</h2>
+          <p>Confírmanos aquí para que tengamos todo listo para ti.</p>
         </div>
         {linkedHousehold ? <form className="rsvp-form linked-rsvp-form" onSubmit={submitRsvp} data-reveal-item>
           <div className="linked-household-intro">
@@ -1030,7 +1038,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
       <section id="faq" className="content-section faq-section" data-reveal-section>
         <div className="section-heading" data-reveal-item>
           <p className="eyebrow">Preguntas frecuentes</p>
-          <h2>Por si te lo preguntabas.</h2>
+          <h2>Por si te sirve saberlo.</h2>
         </div>
         <div className="faq-list">
           {data.faq.map((item) => (
