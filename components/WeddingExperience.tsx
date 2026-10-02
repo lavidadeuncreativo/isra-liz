@@ -772,7 +772,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
             </div>
           ) : null}
         </>
-      )
+      )}
 
       <section id="inicio" className="intro-scene" data-intro-scene>
         <div className="scene-stage intro-stage">
