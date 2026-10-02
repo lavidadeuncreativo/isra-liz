@@ -90,6 +90,11 @@ async function inspect(width, height, reduced = false) {
   await send("Page.navigate", { url });
   await sleep(350);
   await until("document.readyState === 'complete' && !!document.querySelector('.entry-actions button')", "portada");
+  await evaluate("document.fonts?.ready");
+  const cover = await evaluate("(() => {const el=document.querySelector('.entry-screen');const s=getComputedStyle(el),art=getComputedStyle(el,'::before');return {color:s.backgroundColor,illustration:art.backgroundImage,visible:s.visibility};})()");
+  assert(cover.visible === "visible" && cover.illustration.includes("album-cover-relief.svg"),
+    width + "px: portada de álbum sin ilustración " + JSON.stringify(cover));
+  await screenshot("book-cover-" + width + ".png");
   await evaluate("document.documentElement.style.scrollBehavior = 'auto'; true");
   // SSR can finish before React hydration has attached click handlers.
   // Never interpret a missed entry click as a motion failure.
@@ -148,6 +153,13 @@ async function inspect(width, height, reduced = false) {
   await sleep(reduced ? 250 : 1050);
   const story = await evaluate("(() => { const s=document.querySelector('.story-scene-1'); const last=[...s.querySelectorAll('.display-title .reveal-word')].at(-1);const lastBody=[...s.querySelectorAll('.story-body .reveal-word')].at(-1); const photo=s.querySelector('.story-photo'); return {word:Number(getComputedStyle(last).opacity),body:Number(getComputedStyle(lastBody).opacity),photo:Number(getComputedStyle(photo).opacity),horizontalOverflow:document.documentElement.scrollWidth>window.innerWidth+2}; })()");
   assert(story.word > 0.85 && story.body > 0.85 && story.photo > 0.85, width + "px: escena no legible " + JSON.stringify(story));
+  if (!reduced) {
+    const vellumOpacity = await evaluate("Number(getComputedStyle(document.querySelector('.story-scene-1 .story-vellum')).opacity)");
+    assert(vellumOpacity < 0.35, width + "px: el papel vegetal todavía cubre la foto al llegar al capítulo (" + vellumOpacity + ")");
+  } else {
+    assert(await evaluate("getComputedStyle(document.querySelector('.story-scene-1 .story-vellum')).display === 'none'"),
+      "Movimiento reducido: el velo debe permanecer oculto");
+  }
   assert(!story.horizontalOverflow, width + "px: overflow horizontal");
   const geometry = await evaluate("(() => {const s=document.querySelector('.story-scene-1'),stage=s.querySelector('.scene-stage'),title=s.querySelector('.display-title'),word=title.querySelector('.reveal-word'),photo=s.querySelector('.story-photo'); const r=e=>{const p=e.getBoundingClientRect();return {top:Math.round(p.top),bottom:Math.round(p.bottom),height:Math.round(p.height)};}; return {scrollY:Math.round(window.scrollY),viewport:window.innerHeight,section:r(s),stage:r(stage),title:r(title),word:r(word),photo:r(photo),stagePos:getComputedStyle(stage).position,stageOverflow:getComputedStyle(stage).overflow};})()");
   console.log("STORY_GEOMETRY " + width + " " + JSON.stringify(geometry));
