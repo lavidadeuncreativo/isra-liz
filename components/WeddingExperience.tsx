@@ -249,9 +249,8 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
     gsap.registerPlugin(ScrollTrigger);
 
     // All scroll-dependent animation stays in the React/GSAP lifecycle.
+    const media = gsap.matchMedia();
     const ctx = gsap.context(() => {
-      const media = gsap.matchMedia();
-
       media.add(
         {
           desktop: "(min-width: 821px)",
@@ -478,7 +477,10 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
       );
     }, root);
 
-    return () => ctx.revert();
+    return () => {
+      media.revert();
+      ctx.revert();
+    };
   }, [entered]);
 
   function enter(withAudio: boolean) {
