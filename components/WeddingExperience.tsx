@@ -189,6 +189,7 @@ function StoryScene({
       <div className="scene-stage">
         <div className="scene-layout">
           <div className="scene-copy">
+            <span className="chapter-folio reveal-support" aria-hidden="true">RECUERDO {String(index + 1).padStart(2, "0")} / {String(2).padStart(2, "0")}</span>
             <p className="kicker reveal-support">{kicker}</p>
             <h2 className="display-title">
               <Words text={title} />
@@ -313,7 +314,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
           if (context.conditions?.reduce) return;
 
           const isMobile = Boolean(context.conditions?.mobile);
-          const scrub = isMobile ? 0.32 : 0.46;
+          const scrub = isMobile ? 0.38 : 0.54;
           const intro = root.querySelector<HTMLElement>("[data-intro-scene]");
 
           if (intro) {
@@ -371,7 +372,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
                 scrollTrigger: {
                   trigger: intro,
                   start: "top top",
-                  end: "bottom bottom",
+                  end: "bottom top",
                   scrub,
                   invalidateOnRefresh: true,
                 },
@@ -398,9 +399,9 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
                 }, 0.52)
                 // Do not remove the whole scene before its sticky stage ends.
                 .to([...titleWords, ...supportingCopy, portraits], {
-                  autoAlpha: 0, filter: "blur(15px)",
-                  y: -30, duration: 0.10,
-                }, 0.90)
+                  autoAlpha: 0, filter: "blur(23px)",
+                  y: -38, duration: 0.22,
+                }, 0.76)
                 .to({}, { duration: 0.01 }, 0.99);
             }
           }
@@ -416,19 +417,19 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
             const index = Number(scene.dataset.sceneIndex || 0);
 
             gsap.set(headline, {
-              autoAlpha: 0, filter: "blur(18px)",
-              y: isMobile ? 50 : 75, rotateX: 52,
+              autoAlpha: 0, filter: "blur(26px)",
+              y: isMobile ? 62 : 86, rotateX: 68,
               skewY: 2, transformOrigin: "50% 100%",
             });
             gsap.set(bodyWords, {
-              autoAlpha: 0, filter: "blur(10px)", y: 22,
-              rotateX: 16,
+              autoAlpha: 0, filter: "blur(18px)", y: 32,
+              rotateX: 28,
             });
             gsap.set(support, {
-              autoAlpha: 0, filter: "blur(8px)", y: 23,
+              autoAlpha: 0, filter: "blur(18px)", y: 29,
             });
             gsap.set(photo, {
-              autoAlpha: 0, filter: "blur(18px)",
+              autoAlpha: 0, filter: "blur(26px)",
               y: isMobile ? 68 : 98,
               scale: 0.86,
               rotation: index % 2 ? 5 : -5,
@@ -441,8 +442,8 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
               defaults: { ease: "none" },
               scrollTrigger: {
                 trigger: scene,
-                start: "top 99%",
-                end: "bottom bottom",
+                start: "top 97%",
+                end: "bottom 3%",
                 scrub,
                 invalidateOnRefresh: true,
               },
@@ -451,108 +452,119 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
             timeline
               .to(support, {
                 autoAlpha: 1, filter: "blur(0px)", y: 0,
-                duration: 0.15, stagger: 0.012,
-              }, 0.035)
+                duration: 0.13, stagger: 0.008,
+              }, 0.025)
               .to(headline, {
                 autoAlpha: 1, filter: "blur(0px)",
                 y: 0, rotateX: 0, skewY: 0,
-                duration: 0.22, stagger: 0.013,
-              }, 0.065)
+                duration: 0.18, stagger: 0.009,
+              }, 0.045)
               .to(bodyWords, {
                 autoAlpha: 1, filter: "blur(0px)",
                 y: 0, rotateX: 0,
-                duration: 0.17, stagger: 0.006,
-              }, 0.18)
+                duration: 0.15, stagger: 0.004,
+              }, 0.11)
               .to(photo, {
                 autoAlpha: 1, filter: "blur(0px)",
                 y: 0, scale: 1, rotation: 0,
-                duration: 0.24,
-              }, 0.09)
+                duration: 0.23,
+              }, 0.075)
               .to(vellum, {
                 autoAlpha: 0, xPercent: 28, filter: "blur(8px)",
-                duration: 0.21,
-              }, 0.28)
+                duration: 0.24,
+              }, 0.19)
               // After its reveal, the photo has gentle depth while the text
               // remains fully readable for the majority of the scene.
               .to(photo, {
                 y: isMobile ? -12 : -24,
                 scale: 1.045,
                 rotation: index % 2 ? -1 : 1,
-                duration: 0.34,
-              }, 0.49)
-              // A short, synchronized exit only at the end of the scene.
+                duration: 0.33,
+              }, 0.36)
+              // The visible fade-out happens AS the chapter leaves the viewport.
               .to([...headline, ...bodyWords, ...support, ...photo], {
-                autoAlpha: 0, filter: "blur(13px)",
-                y: -28, duration: 0.10,
-              }, 0.91)
-              .to({}, { duration: 0.01 }, 1);
+                autoAlpha: 0, filter: "blur(23px)",
+                y: -48, duration: 0.22,
+              }, 0.72)
+              .to({}, { duration: 0.01 }, 0.99);
           });
 
-          // Narrative information returns to the original blur-appear /
-          // blur-disappear behavior. Interactive content never fades away.
-          root.querySelectorAll<HTMLElement>("[data-reveal-section]").forEach((section) => {
-            const interactiveSection = section.matches(".rsvp-section, .gifts-section, .faq-section");
-            const items = interactiveSection
-              ? section.querySelectorAll<HTMLElement>(".section-heading")
-              : section.querySelectorAll<HTMLElement>("[data-reveal-item]");
+          // Editorial pieces recover the original scroll-controlled blur:
+          // reveal on entry, hold while legible, dissolve on the way out.
+          // Inputs, links and their parent interactive surfaces never vanish.
+          const revealEditorial = (node: HTMLElement, allowExit: boolean, order: number) => {
+            const trigger = node.closest<HTMLElement>("[data-reveal-item]") || node;
+            const intro = {
+              autoAlpha: 0, filter: "blur(26px)",
+              y: isMobile ? 48 : 64,
+              rotateX: isMobile ? 42 : 68,
+              skewY: 1.6,
+              scale: .973,
+              transformOrigin: "50% 100%",
+            };
 
-            items.forEach((item) => {
-              const hasControls = Boolean(item.querySelector("form, input, textarea, button, a[href]"));
-              if (item.matches("form, details") || hasControls) return;
-
-              const fadeOnLeave = !interactiveSection && (
-                item.matches(".section-heading, .family-card") ||
-                (item.matches(".detail-card") && !item.querySelector("a[href]"))
-              );
-
-              const from = {
-                autoAlpha: 0,
-                y: isMobile ? 34 : 49,
-                filter: `blur(${isMobile ? 9 : 15}px)`,
-                rotateX: isMobile ? 4 : 11,
-                transformOrigin: "50% 100%",
-              };
-              if (!fadeOnLeave) {
-                gsap.fromTo(item, from, {
-                  autoAlpha: 1, y: 0, filter: "blur(0px)", rotateX: 0,
-                  duration: 0.95,
-                  ease: "power3.out",
-                  scrollTrigger: {
-                    trigger: item,
-                    start: "top 94%",
-                    once: true,
-                    invalidateOnRefresh: true,
-                  },
-                });
-                return;
-              }
-
-              const sequence = gsap.timeline({
-                defaults: { ease: "none" },
+            if (!allowExit) {
+              gsap.fromTo(node, intro, {
+                autoAlpha: 1, filter: "blur(0px)",
+                y: 0, rotateX: 0, skewY: 0, scale: 1,
+                ease: "power3.out", duration: .9, delay: Math.min(.16,order * .035),
                 scrollTrigger: {
-                  trigger: item,
-                  start: "top 98%",
-                  end: "bottom 3%",
-                  scrub: isMobile ? 0.18 : 0.28,
+                  trigger, start: "top 93%", once: true,
                   invalidateOnRefresh: true,
                 },
               });
+              return;
+            }
 
-              sequence
-                .fromTo(item, from, {
-                  autoAlpha: 1, y: 0, filter: "blur(0px)",
-                  rotateX: 0, duration: 0.23,
-                }, 0)
-                .to({}, { duration: 0.50 }, 0.24)
-                .to(item, {
-                  autoAlpha: 0,
-                  y: -24,
-                  filter: `blur(${isMobile ? 8 : 13}px)`,
-                  duration: 0.15,
-                }, 0.85)
-                .to({}, { duration: 0.01 }, 1);
+            gsap.timeline({
+              defaults: { ease: "none" },
+              scrollTrigger: {
+                trigger,
+                start: "top 93%",
+                end: "bottom 10%",
+                scrub: isMobile ? .54 : .75,
+                invalidateOnRefresh: true,
+              },
+            })
+              .fromTo(node, intro, {
+                autoAlpha: 1, filter: "blur(0px)",
+                y: 0, rotateX: 0, skewY: 0, scale: 1,
+                duration: .27,
+              }, 0)
+              .to({}, { duration: .42 }, .29)
+              .to(node, {
+                autoAlpha: .06,
+                filter: "blur(24px)",
+                y: -42,
+                scale: .981,
+                duration: .25,
+              }, .75)
+              .to({}, { duration: .01 }, 1);
+          };
+
+          root.querySelectorAll<HTMLElement>("[data-reveal-section]").forEach((section) => {
+            const interactive = section.matches(".rsvp-section, .gifts-section, .faq-section");
+            const items = interactive
+              ? section.querySelectorAll<HTMLElement>(".section-heading")
+              : section.querySelectorAll<HTMLElement>("[data-reveal-item]");
+
+            items.forEach((item, index) => {
+              // Gallery keeps moving once visible; map and form actions remain
+              // accessible throughout the scroll, including reverse scroll.
+              if (item.matches("form, details") || item.querySelector("form, input, textarea, button, a[href]")) {
+                if (item.matches(".detail-card")) {
+                  const copy = item.querySelector<HTMLElement>(".detail-copy");
+                  if (copy) revealEditorial(copy, false, index);
+                }
+                return;
+              }
+              const noExit = interactive || item.matches(".gallery-marquee, .schedule");
+              revealEditorial(item, !noExit, index);
             });
           });
+
+          const giftingCopy = root.querySelector<HTMLElement>(".gift-copy");
+          if (giftingCopy) revealEditorial(giftingCopy, false, 0);
 
           let active = true;
           const refresh = () => { if (active) ScrollTrigger.refresh(); };
@@ -960,10 +972,12 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
         <div className="details-grid details-grid-compact">
           {data.essentials.map((item, index) => (
             <article className="detail-card" data-reveal-item key={item.label}>
-              <span className="detail-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
-              <small>{item.label}</small>
-              <h3>{item.title}</h3>
-              <p>{item.body}</p>
+              <div className="detail-copy">
+                <span className="detail-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                <small>{item.label}</small>
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
+              </div>
               {"href" in item && item.href ? (
                 <a href={item.href} target="_blank" rel="noreferrer">{"actionLabel" in item && item.actionLabel ? item.actionLabel : "Abrir"}</a>
               ) : null}
