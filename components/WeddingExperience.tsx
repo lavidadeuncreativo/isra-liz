@@ -248,155 +248,223 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
 
     gsap.registerPlugin(ScrollTrigger);
 
-    const mm = gsap.matchMedia();
+    // All scroll-dependent animation stays in the React/GSAP lifecycle.
     const ctx = gsap.context(() => {
-      mm.add(
+      const media = gsap.matchMedia();
+
+      media.add(
         {
           desktop: "(min-width: 821px)",
           mobile: "(max-width: 820px)",
           reduce: "(prefers-reduced-motion: reduce)",
         },
         (context) => {
-          // Never hide content for visitors who request reduced motion.
+          // Reduced motion is intentionally readable and still. Never gsap.set()
+          // elements to invisible states before checking this condition.
           if (context.conditions?.reduce) return;
 
           const isMobile = Boolean(context.conditions?.mobile);
+          const scrub = isMobile ? 0.32 : 0.46;
           const intro = root.querySelector<HTMLElement>("[data-intro-scene]");
 
           if (intro) {
-            const words = Array.from(intro.querySelectorAll<HTMLElement>(".reveal-word"));
-            const support = Array.from(intro.querySelectorAll<HTMLElement>(".reveal-support"));
-            const floaters = intro.querySelector<HTMLElement>("[data-hero-floaters]");
+            const titleWords = Array.from(intro.querySelectorAll<HTMLElement>(".intro-title .reveal-word"));
+            const supportingCopy = Array.from(intro.querySelectorAll<HTMLElement>(".reveal-support"));
+            const portraits = intro.querySelector<HTMLElement>("[data-hero-floaters]");
             const liz = intro.querySelector<HTMLElement>("[data-head-liz]");
             const isra = intro.querySelector<HTMLElement>("[data-head-isra]");
             const heart = intro.querySelector<HTMLElement>("[data-heart]");
 
-            // The first scene must be readable immediately after opening, even
-            // before the visitor scrolls a single pixel.
-            gsap.set(words, { autoAlpha: 0, y: 32, filter: "blur(9px)" });
-            gsap.set(support, { autoAlpha: 0, y: 16 });
-            if (floaters) gsap.set(floaters, { autoAlpha: 0, y: 22, filter: "blur(8px)" });
+            gsap.set(titleWords, {
+              autoAlpha: 0,
+              filter: "blur(22px)",
+              y: isMobile ? 65 : 94,
+              rotateX: 58,
+              skewY: 3,
+              transformOrigin: "50% 100%",
+            });
+            gsap.set(supportingCopy, { autoAlpha: 0, filter: "blur(10px)", y: 32 });
+            if (portraits) gsap.set(portraits, {
+              autoAlpha: 0, filter: "blur(16px)", y: 90, scale: 0.86,
+            });
 
-            const introEntrance = gsap.timeline({ defaults: { ease: "power2.out" } })
-              .to(words, {
-                autoAlpha: 1, y: 0, filter: "blur(0px)",
-                duration: 0.65, stagger: 0.014,
+            // The entry overlay fades for ~600ms. Previously the headline
+            // finished its animation BEHIND the overlay and looked static.
+            // Delay the reveal until the cover has actually begun to leave.
+            const entrance = gsap.timeline({ delay: 0.48, defaults: { ease: "power3.out" } });
+
+            entrance
+              .to(titleWords, {
+                autoAlpha: 1, filter: "blur(0px)",
+                y: 0, rotateX: 0, skewY: 0,
+                duration: 1.04,
+                stagger: isMobile ? 0.048 : 0.065,
               }, 0)
-              .to(support, { autoAlpha: 1, y: 0, duration: 0.5, stagger: 0.07 }, 0.12);
+              .to(supportingCopy, {
+                autoAlpha: 1, filter: "blur(0px)", y: 0,
+                duration: 0.75, stagger: 0.15,
+              }, 0.46);
 
-            if (floaters) {
-              introEntrance.to(floaters, {
-                autoAlpha: 1, y: 0, filter: "blur(0px)", duration: 0.6,
-              }, 0.18);
+            if (portraits) {
+              entrance.to(portraits, {
+                autoAlpha: 1, filter: "blur(0px)",
+                y: 0, scale: 1, duration: 1.15,
+                ease: "back.out(1.14)",
+              }, 0.24);
             }
 
-            if (liz && isra && heart && floaters) {
+            if (liz && isra && heart && portraits) {
+              // Keep the original childhood-photograph / heart choreography,
+              // but make the children approach one another, rather than drift
+              // apart. The final fade only begins as the next scene arrives.
               const introScroll = gsap.timeline({
                 defaults: { ease: "none" },
                 scrollTrigger: {
                   trigger: intro,
                   start: "top top",
                   end: "bottom bottom",
-                  scrub: isMobile ? 0.4 : 0.6,
+                  scrub,
                   invalidateOnRefresh: true,
                 },
               });
 
               introScroll
-                .to(liz, { x: isMobile ? -8 : -24, y: isMobile ? 10 : 26, rotation: -7, duration: 0.24 }, 0.2)
-                .to(isra, { x: isMobile ? 8 : 24, y: isMobile ? 8 : 22, rotation: 7, duration: 0.24 }, 0.2)
-                .to(heart, { y: isMobile ? -4 : -8, scale: 1.04, duration: 0.18 }, 0.28)
-                .to([...words, ...support, floaters], {
-                  autoAlpha: 0, filter: "blur(8px)", y: -18, duration: 0.12,
-                }, 0.87)
+                .to(liz, {
+                  x: isMobile ? 16 : 54,
+                  y: isMobile ? 8 : 16,
+                  rotation: 6, scale: 1.055, duration: 0.38,
+                }, 0.14)
+                .to(isra, {
+                  x: isMobile ? -16 : -54,
+                  y: isMobile ? 8 : 16,
+                  rotation: -6, scale: 1.055, duration: 0.38,
+                }, 0.14)
+                .to(heart, {
+                  y: isMobile ? -6 : -12,
+                  scale: 1.19, duration: 0.28,
+                }, 0.32)
+                .to([liz, isra], {
+                  y: isMobile ? 2 : 10,
+                  duration: 0.16,
+                }, 0.52)
+                // Do not remove the whole scene before its sticky stage ends.
+                .to([...titleWords, ...supportingCopy, portraits], {
+                  autoAlpha: 0, filter: "blur(15px)",
+                  y: -30, duration: 0.10,
+                }, 0.90)
                 .to({}, { duration: 0.01 }, 0.99);
             }
           }
 
           root.querySelectorAll<HTMLElement>("[data-story-scene]").forEach((scene) => {
-            // Animate headlines as individual words, but keep paragraphs intact
-            // so the last line is never revealed while the first is fading.
-            const headline = Array.from(
-              scene.querySelectorAll<HTMLElement>(
-                ".display-title .reveal-word, .reveal-title .reveal-word, .couple-title .reveal-word",
-              ),
-            );
+            const headline = Array.from(scene.querySelectorAll<HTMLElement>(
+              ".display-title .reveal-word, .reveal-title .reveal-word, .couple-title .reveal-word",
+            ));
+            const bodyWords = Array.from(scene.querySelectorAll<HTMLElement>(".story-body .reveal-word"));
             const support = Array.from(scene.querySelectorAll<HTMLElement>(".reveal-support"));
-            const body = Array.from(scene.querySelectorAll<HTMLElement>(".story-body"));
-            const media = Array.from(scene.querySelectorAll<HTMLElement>(".reveal-media"));
+            const photo = Array.from(scene.querySelectorAll<HTMLElement>(".reveal-media"));
             const index = Number(scene.dataset.sceneIndex || 0);
 
             gsap.set(headline, {
-              autoAlpha: 0, filter: "blur(10px)", y: 34, rotateX: 28,
+              autoAlpha: 0, filter: "blur(18px)",
+              y: isMobile ? 50 : 75, rotateX: 52,
+              skewY: 2, transformOrigin: "50% 100%",
             });
-            gsap.set(support, { autoAlpha: 0, y: 16 });
-            gsap.set(body, { autoAlpha: 0, y: 16 });
-            gsap.set(media, {
-              autoAlpha: 0, filter: "blur(9px)", y: 22, scale: 0.97,
-              rotation: index % 2 ? 1.5 : -1.5,
+            gsap.set(bodyWords, {
+              autoAlpha: 0, filter: "blur(10px)", y: 22,
+              rotateX: 16,
+            });
+            gsap.set(support, {
+              autoAlpha: 0, filter: "blur(8px)", y: 23,
+            });
+            gsap.set(photo, {
+              autoAlpha: 0, filter: "blur(18px)",
+              y: isMobile ? 68 : 98,
+              scale: 0.86,
+              rotation: index % 2 ? 5 : -5,
             });
 
-            const sceneTimeline = gsap.timeline({
+            // Starts as the NEXT scene enters the bottom of the viewport.
+            // This eliminates the blank gap caused by "top 65%".
+            const timeline = gsap.timeline({
               defaults: { ease: "none" },
               scrollTrigger: {
                 trigger: scene,
-                // Reveal while the scene is entering the viewport, not after
-                // its sticky stage has already occupied the whole screen.
-                start: "top 65%",
+                start: "top 99%",
                 end: "bottom bottom",
-                scrub: isMobile ? 0.4 : 0.6,
+                scrub,
                 invalidateOnRefresh: true,
               },
             });
 
-            sceneTimeline
+            timeline
+              .to(support, {
+                autoAlpha: 1, filter: "blur(0px)", y: 0,
+                duration: 0.15, stagger: 0.012,
+              }, 0.035)
               .to(headline, {
-                autoAlpha: 1, filter: "blur(0px)", y: 0, rotateX: 0,
-                duration: 0.16, stagger: 0.006,
-              }, 0.04)
-              .to(support, { autoAlpha: 1, y: 0, duration: 0.13, stagger: 0.015 }, 0.07)
-              .to(body, { autoAlpha: 1, y: 0, duration: 0.14 }, 0.15)
-              .to(media, {
-                autoAlpha: 1, filter: "blur(0px)", y: 0, scale: 1,
-                rotation: 0, duration: 0.18,
+                autoAlpha: 1, filter: "blur(0px)",
+                y: 0, rotateX: 0, skewY: 0,
+                duration: 0.22, stagger: 0.013,
+              }, 0.065)
+              .to(bodyWords, {
+                autoAlpha: 1, filter: "blur(0px)",
+                y: 0, rotateX: 0,
+                duration: 0.17, stagger: 0.006,
+              }, 0.18)
+              .to(photo, {
+                autoAlpha: 1, filter: "blur(0px)",
+                y: 0, scale: 1, rotation: 0,
+                duration: 0.24,
               }, 0.09)
-              // The scene remains fully readable until the last portion of
-              // its scroll range; departure is gentle and happens near exit.
-              .to([...headline, ...support, ...body, ...media], {
-                autoAlpha: 0, filter: "blur(8px)", y: -14, duration: 0.12,
-              }, 0.87)
-              .to({}, { duration: 0.01 }, 0.99);
+              // After its reveal, the photo has gentle depth while the text
+              // remains fully readable for the majority of the scene.
+              .to(photo, {
+                y: isMobile ? -12 : -24,
+                scale: 1.045,
+                rotation: index % 2 ? -1 : 1,
+                duration: 0.34,
+              }, 0.49)
+              // A short, synchronized exit only at the end of the scene.
+              .to([...headline, ...bodyWords, ...support, ...photo], {
+                autoAlpha: 0, filter: "blur(13px)",
+                y: -28, duration: 0.10,
+              }, 0.91)
+              .to({}, { duration: 0.01 }, 1);
           });
 
           root.querySelectorAll<HTMLElement>("[data-reveal-section]").forEach((section) => {
-            // RSVP, gifts and FAQ are interactive: never scroll-hide their
-            // inputs, buttons, feedback, or accordion content.
-            if (section.matches(".rsvp-section, .gifts-section, .faq-section")) return;
+            // Forms, accordions and their feedback must never scroll-disappear.
+            // Give informational headings a single editorial entrance instead.
+            const items = section.matches(".rsvp-section, .gifts-section, .faq-section")
+              ? section.querySelectorAll<HTMLElement>(".section-heading")
+              : section.querySelectorAll<HTMLElement>("[data-reveal-item]");
 
-            section.querySelectorAll<HTMLElement>("[data-reveal-item]").forEach((item) => {
-              if (
-                item.matches(".gallery-marquee, form, details") ||
-                item.querySelector("form, input, textarea, button")
-              ) return;
+            items.forEach((item) => {
+              if (item.matches("form, details") || item.querySelector("form, input, textarea, button")) return;
 
-              gsap.fromTo(item,
-                { autoAlpha: 0, y: 24, filter: "blur(6px)" },
-                {
-                  autoAlpha: 1, y: 0, filter: "blur(0px)",
-                  duration: 0.65, ease: "power2.out",
-                  scrollTrigger: {
-                    trigger: item,
-                    start: "top 93%",
-                    once: true,
-                    invalidateOnRefresh: true,
-                  },
+              gsap.fromTo(item, {
+                autoAlpha: 0,
+                y: isMobile ? 36 : 52,
+                filter: "blur(12px)",
+                rotateX: 9,
+              }, {
+                autoAlpha: 1,
+                y: 0,
+                filter: "blur(0px)",
+                rotateX: 0,
+                duration: 0.95,
+                ease: "power3.out",
+                scrollTrigger: {
+                  trigger: item,
+                  start: "top 92%",
+                  once: true,
+                  invalidateOnRefresh: true,
                 },
-              );
+              });
             });
           });
 
-          // Font loading can change line wraps and therefore trigger geometry.
-          // ScrollTrigger already observes resizing; this covers late fonts.
           let active = true;
           const refresh = () => { if (active) ScrollTrigger.refresh(); };
           void document.fonts?.ready.then(refresh);
@@ -410,10 +478,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
       );
     }, root);
 
-    return () => {
-      mm.revert();
-      ctx.revert();
-    };
+    return () => ctx.revert();
   }, [entered]);
 
   function enter(withAudio: boolean) {
