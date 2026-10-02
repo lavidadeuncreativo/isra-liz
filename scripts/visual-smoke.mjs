@@ -125,6 +125,12 @@ try {
   console.log("PASS: scroll, mobile, desktop, reduced motion and RSVP");
 } finally {
   socket?.close();
-  browser.kill("SIGTERM");
-  rmSync(profile, { recursive: true, force: true });
+  if (browser.exitCode === null) {
+    browser.kill("SIGTERM");
+    await Promise.race([
+      new Promise((resolve) => browser.once("exit", resolve)),
+      sleep(1500),
+    ]);
+  }
+  rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
 }
