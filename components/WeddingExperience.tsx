@@ -477,35 +477,69 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
               .to({}, { duration: 0.01 }, 1);
           });
 
+          // Narrative information returns to the original blur-appear /
+          // blur-disappear behavior. Interactive content never fades away.
           root.querySelectorAll<HTMLElement>("[data-reveal-section]").forEach((section) => {
-            // Forms, accordions and their feedback must never scroll-disappear.
-            // Give informational headings a single editorial entrance instead.
-            const items = section.matches(".rsvp-section, .gifts-section, .faq-section")
+            const interactiveSection = section.matches(".rsvp-section, .gifts-section, .faq-section");
+            const items = interactiveSection
               ? section.querySelectorAll<HTMLElement>(".section-heading")
               : section.querySelectorAll<HTMLElement>("[data-reveal-item]");
 
             items.forEach((item) => {
-              if (item.matches("form, details") || item.querySelector("form, input, textarea, button")) return;
+              const hasControls = Boolean(item.querySelector("form, input, textarea, button, a[href]"));
+              if (item.matches("form, details") || hasControls) return;
 
-              gsap.fromTo(item, {
+              const fadeOnLeave = !interactiveSection && (
+                item.matches(".section-heading, .family-card") ||
+                (item.matches(".detail-card") && !item.querySelector("a[href]"))
+              );
+
+              const from = {
                 autoAlpha: 0,
-                y: isMobile ? 36 : 52,
-                filter: "blur(12px)",
-                rotateX: 9,
-              }, {
-                autoAlpha: 1,
-                y: 0,
-                filter: "blur(0px)",
-                rotateX: 0,
-                duration: 0.95,
-                ease: "power3.out",
+                y: isMobile ? 34 : 49,
+                filter: `blur(${isMobile ? 9 : 15}px)`,
+                rotateX: isMobile ? 4 : 11,
+                transformOrigin: "50% 100%",
+              };
+              if (!fadeOnLeave) {
+                gsap.fromTo(item, from, {
+                  autoAlpha: 1, y: 0, filter: "blur(0px)", rotateX: 0,
+                  duration: 0.95,
+                  ease: "power3.out",
+                  scrollTrigger: {
+                    trigger: item,
+                    start: "top 94%",
+                    once: true,
+                    invalidateOnRefresh: true,
+                  },
+                });
+                return;
+              }
+
+              const sequence = gsap.timeline({
+                defaults: { ease: "none" },
                 scrollTrigger: {
                   trigger: item,
-                  start: "top 92%",
-                  once: true,
+                  start: "top 98%",
+                  end: "bottom 3%",
+                  scrub: isMobile ? 0.18 : 0.28,
                   invalidateOnRefresh: true,
                 },
               });
+
+              sequence
+                .fromTo(item, from, {
+                  autoAlpha: 1, y: 0, filter: "blur(0px)",
+                  rotateX: 0, duration: 0.23,
+                }, 0)
+                .to({}, { duration: 0.50 }, 0.24)
+                .to(item, {
+                  autoAlpha: 0,
+                  y: -24,
+                  filter: `blur(${isMobile ? 8 : 13}px)`,
+                  duration: 0.15,
+                }, 0.85)
+                .to({}, { duration: 0.01 }, 1);
             });
           });
 
