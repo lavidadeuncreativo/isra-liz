@@ -152,6 +152,7 @@ async function inspect(width, height, reduced = false) {
   console.log("STORY_GEOMETRY " + width + " " + JSON.stringify(geometry));
   const paint = await evaluate("(() => {const nodes=['.story-scene-1','.story-scene-1 .scene-stage','.story-scene-1 .scene-layout','.story-scene-1 .scene-copy','.story-scene-1 .display-title','.story-scene-1 .display-title .reveal-word','.story-scene-1 .story-body','.story-scene-1 .story-photo'];return {layers:nodes.map(q=>{const e=document.querySelector(q);const s=getComputedStyle(e);return {q,opacity:s.opacity,visibility:s.visibility,filter:s.filter,display:s.display,transform:s.transform,color:s.color,z:s.zIndex}}),topHit:document.elementFromPoint(innerWidth/2,220)?.className,photoHit:document.elementFromPoint(innerWidth/2,520)?.className};})()");
   console.log("STORY_PAINT " + width + " " + JSON.stringify(paint));
+  await screenshot(reduced ? "reduced-motion.png" : "story-" + width + ".png");
   assert(geometry.title.bottom > 0 && geometry.title.top < height &&
     geometry.photo.bottom > 0 && geometry.photo.top < height,
     width + "px: texto o foto fuera del viewport " + JSON.stringify(geometry));
@@ -165,7 +166,7 @@ async function inspect(width, height, reduced = false) {
     assert(departing < 0.30, width + "px: no se aprecia blur disappear (" + departing + ")");
   }
 
-  await screenshot(reduced ? "reduced-motion.png" : "story-" + width + ".png");
+  if (!reduced) await screenshot("story-exit-" + width + ".png");
 
   // Two visually identical groups permit an uninterrupted half-track loop.
   const loop = await evaluate("(() => { const groups=[...document.querySelectorAll('.gallery-loop-group')]; return {length:groups.length,first:groups[0]?.getBoundingClientRect().width,second:groups[1]?.getBoundingClientRect().width,animation:getComputedStyle(document.querySelector('.gallery-track')).animationName};})()");
