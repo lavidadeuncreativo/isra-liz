@@ -10,7 +10,7 @@ Lugar: Salón Presidente, Uruapan, Michoacán.
 - Titulares con Instrument Serif; interfaz con Figtree.
 - Evitar tarjetas genéricas de SaaS, degradados intensos y animaciones bruscas.
 - El contenido principal debe leerse perfectamente en pantallas de 360 px.
-- Solo las escenas narrativas tienen salida con blur al abandonar el viewport; los formularios y el contenido informativo permanecen visibles.
+- Las escenas narrativas y las cabeceras editoriales pueden entrar y salir con blur al abandonar el viewport. Los formularios, botones, enlaces y sus mensajes permanecen visibles y usables.
 - Las palabras animadas deben conservar espacios visibles; no concatenar spans.
 - Las fotografías deben acompañar la lectura, no tapar titulares.
 
@@ -19,6 +19,8 @@ Lugar: Salón Presidente, Uruapan, Michoacán.
 - Crear animaciones dentro de `gsap.context()` y limpiar con `ctx.revert()`.
 - Usar `gsap.matchMedia()` para desktop, móvil y `prefers-reduced-motion`; cuando se solicita reducir movimiento, el contenido debe permanecer visible sin GSAP.
 - No bloquear el scroll con librerías de smooth-scroll.
+- La barra de progreso se calcula sin re-render por píxel; el dock móvil permanece visible tras abrir la invitación.
+- El carrusel continuo debe tener un control de pausa y, con movimiento reducido, permitir recorrer fotografías manualmente.
 - El audio solo puede iniciar después de una acción explícita del usuario.
 
 ## Contenido
@@ -59,6 +61,7 @@ Revisar como mínimo:
 - `data/wedding.ts`: textos, fechas, padres, galería, agenda y FAQ.
 - `components/WeddingExperience.tsx`: experiencia, animaciones, formulario y regalos.
 - `app/globals.css`: sistema visual responsive.
+- `docs/editorial-system.md`: guía de marca, copy, espaciados y prioridades de UX.
 - `app/api/rsvp/linked/route.ts` y `lib/platform-rsvp.ts`: conexión protegida a BODA OS.
 - `app/i/[code]/page.tsx`: invitación por hogar.
 - `app/api/rsvp/route.ts`: endpoint legado, inactivo cuando hay integración.
