@@ -60,7 +60,7 @@ summary:focus-visible {
   place-items: center;
   padding: 24px;
   background: var(--paper);
-  transition: opacity 700ms cubic-bezier(.22,1,.36,1), visibility 700ms;
+  transition: opacity 600ms cubic-bezier(.22,1,.36,1), visibility 600ms;
 }
 
 .entry-screen.is-hidden {
@@ -246,6 +246,8 @@ summary:focus-visible {
 }
 
 .intro-stage { perspective: 1800px; }
+.story-scene .scene-stage { perspective: 1400px; }
+.scene-copy { transform-style: preserve-3d; }
 
 .intro-shell {
   position: relative;

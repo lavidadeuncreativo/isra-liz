@@ -91,14 +91,33 @@ async function inspect(width, height, reduced = false) {
   await sleep(350);
   await until("document.readyState === 'complete' && !!document.querySelector('.entry-actions button')", "portada");
   await evaluate("document.documentElement.style.scrollBehavior = 'auto'; document.querySelector('.entry-actions button:last-of-type').click(); true");
-  await sleep(reduced ? 250 : 1200);
+
+  // Visibility by itself is insufficient: the old test missed that the
+  // headline entrance had finished behind the 700ms opening overlay.
+  if (!reduced) {
+    await sleep(780);
+    const during = await evaluate("(() => {const w=[...document.querySelectorAll('.intro-title .reveal-word')];return {first:Number(getComputedStyle(w[0]).opacity),last:Number(getComputedStyle(w.at(-1)).opacity)};})()");
+    assert(during.first > 0.15 && during.last < 0.90,
+      width + "px: sin animación perceptible al abrir " + JSON.stringify(during));
+    await sleep(1500);
+  } else {
+    await sleep(250);
+  }
 
   const intro = await evaluate("({visibility:getComputedStyle(document.querySelector('.intro-title .reveal-word')).visibility,opacity:Number(getComputedStyle(document.querySelector('.intro-title .reveal-word')).opacity)})");
   assert(intro.visibility !== "hidden" && intro.opacity > 0.85, width + "px: portada oculta");
 
+  // The next chapter must begin hidden BEFORE reaching the viewport and
+  // be completely readable once its sticky stage occupies the viewport.
+  if (!reduced) {
+    await evaluate("window.scrollTo({top:document.querySelector('.story-scene-1').offsetTop-innerHeight*1.05,behavior:'instant'});true");
+    await sleep(500);
+    const before = await evaluate("Number(getComputedStyle(document.querySelector('.story-scene-1 .display-title .reveal-word')).opacity)");
+    assert(before < 0.25, width + "px: el capítulo carece de efecto de entrada (" + before + ")");
+  }
   await evaluate("document.querySelector('.story-scene-1').scrollIntoView({block:'start',behavior:'instant'}); true");
   await sleep(reduced ? 250 : 1050);
-  const story = await evaluate("(() => { const s=document.querySelector('.story-scene-1'); const last=[...s.querySelectorAll('.display-title .reveal-word')].at(-1); const body=s.querySelector('.story-body'); const photo=s.querySelector('.story-photo'); return {word:Number(getComputedStyle(last).opacity),body:Number(getComputedStyle(body).opacity),photo:Number(getComputedStyle(photo).opacity),horizontalOverflow:document.documentElement.scrollWidth>window.innerWidth+2}; })()");
+  const story = await evaluate("(() => { const s=document.querySelector('.story-scene-1'); const last=[...s.querySelectorAll('.display-title .reveal-word')].at(-1);const lastBody=[...s.querySelectorAll('.story-body .reveal-word')].at(-1); const photo=s.querySelector('.story-photo'); return {word:Number(getComputedStyle(last).opacity),body:Number(getComputedStyle(lastBody).opacity),photo:Number(getComputedStyle(photo).opacity),horizontalOverflow:document.documentElement.scrollWidth>window.innerWidth+2}; })()");
   assert(story.word > 0.85 && story.body > 0.85 && story.photo > 0.85, width + "px: escena no legible " + JSON.stringify(story));
   assert(!story.horizontalOverflow, width + "px: overflow horizontal");
   await screenshot(reduced ? "reduced-motion.png" : "story-" + width + ".png");
@@ -119,6 +138,7 @@ async function inspect(width, height, reduced = false) {
 try {
   await connect();
   await inspect(390, 844);
+  await inspect(375, 667);
   await inspect(768, 1024);
   await inspect(1440, 900);
   await inspect(390, 844, true);
