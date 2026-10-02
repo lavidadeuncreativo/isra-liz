@@ -292,15 +292,18 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
             gsap.set(support, { autoAlpha: 0, y: 16 });
             if (floaters) gsap.set(floaters, { autoAlpha: 0, y: 22, filter: "blur(8px)" });
 
-            gsap.timeline({ defaults: { ease: "power2.out" } })
+            const introEntrance = gsap.timeline({ defaults: { ease: "power2.out" } })
               .to(words, {
                 autoAlpha: 1, y: 0, filter: "blur(0px)",
                 duration: 0.65, stagger: 0.014,
               }, 0)
-              .to(support, { autoAlpha: 1, y: 0, duration: 0.5, stagger: 0.07 }, 0.12)
-              .to(floaters, {
+              .to(support, { autoAlpha: 1, y: 0, duration: 0.5, stagger: 0.07 }, 0.12);
+
+            if (floaters) {
+              introEntrance.to(floaters, {
                 autoAlpha: 1, y: 0, filter: "blur(0px)", duration: 0.6,
               }, 0.18);
+            }
 
             if (liz && isra && heart && floaters) {
               const introScroll = gsap.timeline({
@@ -684,11 +687,11 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
           </div>
 
           <div className="invite-actions reveal-support">
-            <a className="button button-primary" href="#detalles">Ver itinerario</a>
-            <a className="button button-secondary" href="#rsvp">Confirmar asistencia</a>
+            <a className="button button-primary" href="#rsvp">Confirmar asistencia</a>
+            <a className="button button-secondary" href="#detalles">Ver detalles</a>
             {hasMap ? (
               <a className="button button-secondary" href={data.venue.mapUrl} target="_blank" rel="noreferrer">
-                Abrir ubicacion
+                Abrir ubicación
               </a>
             ) : null}
           </div>
@@ -724,7 +727,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
         <div className="section-heading" data-reveal-item>
           <p className="eyebrow">Lo que hemos vivido</p>
           <h2>Una historia hecha de muchos momentos.</h2>
-          <p>Un recorrido de recuerdos que sigue avanzando, igual que nosotros.</p>
+          <p>Algunos de nuestros momentos favoritos.</p>
         </div>
         <div className="gallery-marquee" data-reveal-item>
           <div className="gallery-track">
@@ -784,7 +787,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
           <div className="linked-household-intro">
             <p className="eyebrow">INVITACIÓN PERSONALIZADA</p>
             <h3>{linkedHousehold.name}</h3>
-            <p>Hemos reservado {linkedHousehold.spotsAllowed} {linkedHousehold.spotsAllowed===1?"lugar":"lugares"} para ustedes. Confirmen por persona; si cambian de planes, pueden volver a este mismo enlace.</p>
+            <p>Reservamos {linkedHousehold.spotsAllowed} {linkedHousehold.spotsAllowed===1?"lugar":"lugares"} para ustedes. Confirmen por persona; pueden volver a este enlace si cambian de planes.</p>
           </div>
           {linkedGuests.map(guest=><fieldset className="linked-person" key={guest.id}>
             <legend>{guest.firstName} {guest.lastName}</legend>
@@ -862,7 +865,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
               </button>
             </article>
 
-            {registryLinks.map((registry) => (
+            {registryLinks.filter((registry) => Boolean(registry.href)).map((registry) => (
               <article className="gift-card" key={registry.label}>
                 <span>{registry.label}</span>
                 <h3>{registry.title}</h3>
@@ -883,7 +886,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
       <section id="faq" className="content-section faq-section" data-reveal-section>
         <div className="section-heading" data-reveal-item>
           <p className="eyebrow">Preguntas frecuentes</p>
-          <h2>Todo lo que necesitas saber.</h2>
+          <h2>Por si te lo preguntabas.</h2>
         </div>
         <div className="faq-list">
           {data.faq.map((item) => (
