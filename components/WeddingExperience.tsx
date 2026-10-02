@@ -549,8 +549,10 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
               : section.querySelectorAll<HTMLElement>("[data-reveal-item]");
 
             items.forEach((item, index) => {
-              // Gallery keeps moving once visible; map and form actions remain
-              // accessible throughout the scroll, including reverse scroll.
+              // Never pre-hide the infinite photo strip: its position changes
+              // during image/font loading and it must be visible on section entry.
+              if (item.matches(".gallery-marquee")) return;
+              // Map and form actions remain accessible throughout the scroll.
               if (item.matches("form, details") || item.querySelector("form, input, textarea, button, a[href]")) {
                 if (item.matches(".detail-card")) {
                   const copy = item.querySelector<HTMLElement>(".detail-copy");
