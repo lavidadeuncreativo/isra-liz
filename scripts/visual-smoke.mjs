@@ -88,6 +88,7 @@ async function inspect(width, height, reduced = false) {
     features: [{ name: "prefers-reduced-motion", value: reduced ? "reduce" : "no-preference" }],
   });
   await send("Page.navigate", { url });
+  await sleep(350);
   await until("document.readyState === 'complete' && !!document.querySelector('.entry-actions button')", "portada");
   await evaluate("document.documentElement.style.scrollBehavior = 'auto'; document.querySelector('.entry-actions button:last-of-type').click(); true");
   await sleep(reduced ? 250 : 1200);
