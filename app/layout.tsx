@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://isra-liz.vercel.app"),
   title: "Isra&Liz · Nos casamos",
   description: "Invitación de boda de Isra y Liz · 20 de febrero de 2027 · Uruapan, Michoacán.",
   robots: {
