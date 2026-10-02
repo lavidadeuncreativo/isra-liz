@@ -8,9 +8,10 @@ export async function POST(request:Request){
     return NextResponse.json({ok:false,message:"La conexión con el RSVP todavía no está disponible."},{status:503});
   }
 
-  let body:any;
-  try{body=await request.json();}
+  let parsed: unknown;
+  try{parsed=await request.json();}
   catch{return NextResponse.json({ok:false,message:"Datos inválidos."},{status:400});}
+  const body = parsed !== null && typeof parsed === "object" ? parsed as Record<string, unknown> : {};
 
   const code=typeof body?.code==="string"?body.code.trim():"";
   const message=typeof body?.message==="string"?body.message.trim():"";
@@ -36,7 +37,12 @@ export async function POST(request:Request){
       return NextResponse.json({ok:false,message:"Falta responder por una persona o hay datos inválidos."},{status:400});
     }
 
-    await submitLinkedRsvp(code,guests as any,message);
+    const confirmedGuests = guests.map((guest) => ({
+      id: guest.id as string,
+      rsvp: guest.rsvp as "yes" | "no",
+      dietary: typeof guest.dietary === "string" ? guest.dietary : undefined,
+    }));
+    await submitLinkedRsvp(code,confirmedGuests,message);
     return NextResponse.json({ok:true,message:"¡Gracias! Su respuesta quedó guardada para Isra y Liz."});
   }catch{
     return NextResponse.json({ok:false,message:"No pudimos guardar su confirmación. Por favor, intenten nuevamente."},{status:502});

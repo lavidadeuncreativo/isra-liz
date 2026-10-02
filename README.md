@@ -8,15 +8,15 @@ Invitación digital editorial construida con Next.js, TypeScript y GSAP ScrollTr
 ## Qué incluye
 
 - Storytelling controlado por scroll.
-- Blur appear y blur disappear reales con GSAP ScrollTrigger.
+- Blur editorial de entrada y salida solo en escenas narrativas; contenido informativo y RSVP siempre legibles.
 - Espaciado correcto entre palabras animadas.
 - Escena inicial con fotografías de infancia que se acercan y forman un corazón.
 - Navegación rápida y cuenta regresiva para la fecha.
-- Sección de historia y galería de la relación.
+- Historia resumida en dos escenas con fotografías reales, seguida de galería.
 - Padres y familias.
 - Fecha, agenda, ubicación, vestimenta y hospedaje.
-- Formulario RSVP con API de Next.js.
-- Correo de notificación y confirmación mediante Resend.
+- RSVP personalizado por hogar conectado con BODA OS y Supabase.
+- Integración antigua por correo inhabilitada si existe conexión a la plataforma.
 - Mesa de experiencias para la luna de miel.
 - Preguntas frecuentes.
 - Metadatos `noindex` para evitar indexación accidental.
@@ -56,42 +56,27 @@ Ahí están:
 
 ## 3. Sustituir fotografías
 
-Reemplaza los SVG dentro de:
+Las escenas visibles utilizan fotografías JPG reales almacenadas en:
 
 ```text
-public/images/
+public/images/gallery/
 ```
 
 Puedes conservar los nombres o actualizar las rutas en `data/wedding.ts`.
 
-Imágenes principales:
-
-```text
-infancia-liz.svg
-infancia-israel.svg
-nosotros-01.svg
-nosotros-02.svg
-galeria-01.svg
-galeria-02.svg
-galeria-03.svg
-galeria-04.svg
-```
+Las imágenes temporales SVG permanecen en el repositorio, pero ya no se utilizan en la historia publicada.
 
 Para producción usa WebP o AVIF, preferentemente por debajo de 350 KB por archivo.
 
 ## 4. Agregar narración
 
-Coloca el archivo aquí:
+El acceso con audio está **desactivado** porque todavía no existe `public/audio/narracion.mp3`. Para activarlo, sube el MP3 real y cambia `audio.enabled` a `true` en `data/wedding.ts`. El navegador solo lo reproducirá tras una acción del invitado.
 
-```text
-public/audio/narracion.mp3
-```
+## 5. RSVP legado (no utilizar en la boda personal)
 
-El navegador no inicia el audio automáticamente: el invitado debe elegir “Entrar con audio”.
+El formulario libre por correo solo existe como mecanismo de compatibilidad cuando **no** está configurada la conexión con Supabase. Si las variables de la plataforma existen, el endpoint responde `410` y las confirmaciones reales se hacen por hogar. La versión actual protege este comportamiento.
 
-## 5. Activar RSVP
-
-El formulario utiliza el endpoint:
+El endpoint heredado es:
 
 ```text
 POST /api/rsvp
@@ -139,7 +124,7 @@ Con las tres variables configuradas y un nuevo despliegue:
 - Las URLs `/i/CODIGO` muestran la experiencia editorial y al final las respuestas por invitado.
 - Guardar la respuesta actualiza las mismas filas en `public.guests` y `public.households` que usa la plataforma.
 - Se puede volver a abrir el enlace para modificar la confirmación.
-- Si la integración no está configurada, el formulario general mantiene temporalmente el comportamiento legado por email; **eso no sincroniza con la plataforma**.
+- Si la integración no está configurada, el formulario general mantiene temporalmente el comportamiento legado por email; **eso no sincroniza con la plataforma y no debe usarse para invitados reales**.
 - `/api/gifts` sigue independiente para regalos.
 
 **En el proyecto de la plataforma:**
@@ -201,8 +186,8 @@ La página incluye `noindex`, pero eso no equivale a protección por contraseña
 
 ## Checklist antes de publicar
 
-- [ ] Sustituir todas las imágenes temporales.
-- [ ] Agregar audio final.
+- [x] La historia visible utiliza fotografías reales. Mantener los SVG históricos sin referenciarlos.
+- [x] Se oculta el botón de audio hasta agregar un archivo real.
 - [ ] Completar nombres de padres.
 - [ ] Confirmar hora real.
 - [ ] Agregar mapa real.

@@ -2,17 +2,24 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://isra-liz.vercel.app"),
   title: "Isra&Liz · Nos casamos",
-  description: "Invitacion de boda de Isra&Liz · 20 de febrero de 2027 · Uruapan, Michoacan.",
+  description: "Invitación de boda de Isra y Liz · 20 de febrero de 2027 · Uruapan, Michoacán.",
   robots: {
     index: false,
     follow: false,
     googleBot: { index: false, follow: false },
   },
   openGraph: {
-    title: "Isra&Liz · Nos casamos",
-    description: "20 de febrero de 2027 · Salon Presidente · Uruapan, Michoacan.",
+    title: "Isra & Liz · Nos casamos",
+    description: "20 de febrero de 2027 · Salón Presidente · Uruapan, Michoacán.",
     type: "website",
+    images: [{ url: "/images/gallery/momento-04.jpg", alt: "Isra y Liz juntos" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Isra & Liz · Nos casamos",
+    images: ["/images/gallery/momento-04.jpg"],
   },
 };
 

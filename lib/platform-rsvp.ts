@@ -69,7 +69,14 @@ export async function getLinkedRsvp(code:string):Promise<LinkedRsvp|null>{
   return result;
 }
 
-export async function submitLinkedRsvp(code:string,guests:LinkedGuest[],message:string){
+// The submission only needs the identity and confirmed answer of each guest.
+export type RsvpSubmissionGuest = {
+  id: string;
+  rsvp: "yes" | "no";
+  dietary?: string;
+};
+
+export async function submitLinkedRsvp(code:string,guests:RsvpSubmissionGuest[],message:string){
   const saved=await invokeRpc<boolean>("submit_public_rsvp",{
     p_code:code,
     p_guests:guests.map(g=>({id:g.id,rsvp:g.rsvp,dietary:g.rsvp==="yes"?(g.dietary||""):""})),

@@ -17,10 +17,9 @@ type GiftModalMode = "info" | "contribution" | null;
 
 const QUICK_LINKS = [
   { href: "#historia", label: "Historia" },
-  { href: "#detalles", label: "Detalles" },
-  { href: "#rsvp", label: "RSVP" },
+  { href: "#detalles", label: "El gran día" },
+  { href: "#rsvp", label: "Confirmar" },
   { href: "#regalos", label: "Regalos" },
-  { href: "#faq", label: "FAQ" },
 ] as const;
 
 function WordPieces({ text }: { text: string }) {
@@ -207,21 +206,6 @@ function StoryScene({
   );
 }
 
-type ScrubRevealOptions = {
-  end?: string;
-  hold?: number;
-  fromBlur?: number;
-  fromScale?: number;
-  fromY?: number;
-  fromRotateX?: number;
-  fromSkewY?: number;
-  outBlur?: number;
-  outOpacity?: number;
-  outScale?: number;
-  outY?: number;
-  stagger?: number;
-};
-
 export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnly = false }: Props) {
   const rootRef = useRef<HTMLElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -266,209 +250,162 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
 
     const mm = gsap.matchMedia();
     const ctx = gsap.context(() => {
-      const createScrubReveal = (targets: Iterable<HTMLElement>, options: ScrubRevealOptions = {}) => {
-        const nodes = Array.from(targets).filter(Boolean);
-        if (!nodes.length) return;
-
-        nodes.forEach((node, index) => {
-          const timeline = gsap.timeline({
-            scrollTrigger: {
-              trigger: node,
-              start: "top 92%",
-              end: options.end ?? "bottom 14%",
-              scrub: 0.85,
-              invalidateOnRefresh: true,
-            },
-          });
-
-          timeline
-            .fromTo(
-              node,
-              {
-                autoAlpha: 0,
-                filter: `blur(${options.fromBlur ?? 24}px)`,
-                y: options.fromY ?? 56,
-                scale: options.fromScale ?? 0.97,
-                rotateX: options.fromRotateX ?? 54,
-                skewY: options.fromSkewY ?? 1.2,
-                transformOrigin: "50% 100%",
-              },
-              {
-                autoAlpha: 1,
-                filter: "blur(0px)",
-                y: 0,
-                scale: 1,
-                rotateX: 0,
-                skewY: 0,
-                duration: 0.36,
-                delay: (options.stagger ?? 0.025) * index,
-                ease: "none",
-              },
-              0,
-            )
-            .to({}, { duration: options.hold ?? 0.28 })
-            .to(
-              node,
-              {
-                autoAlpha: options.outOpacity ?? 0,
-                filter: `blur(${options.outBlur ?? 22}px)`,
-                y: options.outY ?? -42,
-                scale: options.outScale ?? 0.985,
-                duration: 0.3,
-                ease: "none",
-              },
-              0.72,
-            );
-        });
-      };
-
       mm.add(
         {
           desktop: "(min-width: 821px)",
           mobile: "(max-width: 820px)",
+          reduce: "(prefers-reduced-motion: reduce)",
         },
         (context) => {
-          const conditions = context.conditions as {
-            desktop?: boolean;
-            mobile?: boolean;
-          };
+          // Never hide content for visitors who request reduced motion.
+          if (context.conditions?.reduce) return;
 
+          const isMobile = Boolean(context.conditions?.mobile);
           const intro = root.querySelector<HTMLElement>("[data-intro-scene]");
-          const introWords = intro ? Array.from(intro.querySelectorAll<HTMLElement>(".reveal-word")) : [];
-          const introSupport = intro ? Array.from(intro.querySelectorAll<HTMLElement>(".reveal-support")) : [];
-          const headLiz = intro?.querySelector<HTMLElement>("[data-head-liz]");
-          const headIsra = intro?.querySelector<HTMLElement>("[data-head-isra]");
-          const heart = intro?.querySelector<HTMLElement>("[data-heart]");
-          const floaters = intro?.querySelector<HTMLElement>("[data-hero-floaters]");
 
-          if (intro && introWords.length && headLiz && headIsra && heart && floaters) {
-            gsap.set(introSupport, { opacity: 0, filter: "blur(16px)", y: 22 });
-            gsap.set(introWords, {
-              opacity: 0,
-              filter: "blur(24px)",
-              y: 70,
-              rotateX: 78,
-              skewY: 2,
-              transformOrigin: "50% 100%",
-            });
-            gsap.set(floaters, { opacity: 0, filter: "blur(26px)", y: 74, scale: 0.92 });
+          if (intro) {
+            const words = Array.from(intro.querySelectorAll<HTMLElement>(".reveal-word"));
+            const support = Array.from(intro.querySelectorAll<HTMLElement>(".reveal-support"));
+            const floaters = intro.querySelector<HTMLElement>("[data-hero-floaters]");
+            const liz = intro.querySelector<HTMLElement>("[data-head-liz]");
+            const isra = intro.querySelector<HTMLElement>("[data-head-isra]");
+            const heart = intro.querySelector<HTMLElement>("[data-heart]");
 
-            const introTimeline = gsap.timeline({
-              scrollTrigger: {
-                trigger: intro,
-                start: "top top",
-                end: "bottom bottom",
-                scrub: 0.95,
-                invalidateOnRefresh: true,
-              },
-            });
+            // The first scene must be readable immediately after opening, even
+            // before the visitor scrolls a single pixel.
+            gsap.set(words, { autoAlpha: 0, y: 32, filter: "blur(9px)" });
+            gsap.set(support, { autoAlpha: 0, y: 16 });
+            if (floaters) gsap.set(floaters, { autoAlpha: 0, y: 22, filter: "blur(8px)" });
 
-            introTimeline
-              .to(
-                introSupport,
-                { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.16, stagger: 0.05, ease: "none" },
-                0,
-              )
-              .to(
-                introWords,
-                {
-                  opacity: 1,
-                  filter: "blur(0px)",
-                  y: 0,
-                  rotateX: 0,
-                  skewY: 0,
-                  duration: 0.34,
-                  stagger: 0.02,
-                  ease: "none",
+            const introEntrance = gsap.timeline({ defaults: { ease: "power2.out" } })
+              .to(words, {
+                autoAlpha: 1, y: 0, filter: "blur(0px)",
+                duration: 0.65, stagger: 0.014,
+              }, 0)
+              .to(support, { autoAlpha: 1, y: 0, duration: 0.5, stagger: 0.07 }, 0.12);
+
+            if (floaters) {
+              introEntrance.to(floaters, {
+                autoAlpha: 1, y: 0, filter: "blur(0px)", duration: 0.6,
+              }, 0.18);
+            }
+
+            if (liz && isra && heart && floaters) {
+              const introScroll = gsap.timeline({
+                defaults: { ease: "none" },
+                scrollTrigger: {
+                  trigger: intro,
+                  start: "top top",
+                  end: "bottom bottom",
+                  scrub: isMobile ? 0.4 : 0.6,
+                  invalidateOnRefresh: true,
                 },
-                0.04,
-              )
-              .to(
-                floaters,
-                { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, duration: 0.28, ease: "none" },
-                0.14,
-              )
-              .to(headLiz, { x: conditions.mobile ? -8 : -24, y: conditions.mobile ? 10 : 26, rotation: -7, scale: 0.98, duration: 0.24, ease: "none" }, 0.48)
-              .to(headIsra, { x: conditions.mobile ? 8 : 24, y: conditions.mobile ? 8 : 22, rotation: 7, scale: 0.98, duration: 0.24, ease: "none" }, 0.48)
-              .to(heart, { y: conditions.mobile ? -4 : -8, scale: 1.04, duration: 0.18, ease: "none" }, 0.54)
-              .to(floaters, { y: conditions.mobile ? -8 : -16, duration: 0.22, ease: "none" }, 0.56)
-              .to(
-                [introWords, introSupport, floaters],
-                {
-                  opacity: 0.08,
-                  filter: "blur(18px)",
-                  y: -36,
-                  duration: 0.28,
-                  stagger: 0.005,
-                  ease: "none",
-                },
-                0.78,
-              );
+              });
+
+              introScroll
+                .to(liz, { x: isMobile ? -8 : -24, y: isMobile ? 10 : 26, rotation: -7, duration: 0.24 }, 0.2)
+                .to(isra, { x: isMobile ? 8 : 24, y: isMobile ? 8 : 22, rotation: 7, duration: 0.24 }, 0.2)
+                .to(heart, { y: isMobile ? -4 : -8, scale: 1.04, duration: 0.18 }, 0.28)
+                .to([...words, ...support, floaters], {
+                  autoAlpha: 0, filter: "blur(8px)", y: -18, duration: 0.12,
+                }, 0.87)
+                .to({}, { duration: 0.01 }, 0.99);
+            }
           }
 
-          gsap.utils.toArray<HTMLElement>("[data-story-scene]").forEach((scene) => {
-            const words = scene.querySelectorAll<HTMLElement>(".reveal-word");
-            const support = scene.querySelectorAll<HTMLElement>(".reveal-support");
-            const media = scene.querySelectorAll<HTMLElement>(".reveal-media");
+          root.querySelectorAll<HTMLElement>("[data-story-scene]").forEach((scene) => {
+            // Animate headlines as individual words, but keep paragraphs intact
+            // so the last line is never revealed while the first is fading.
+            const headline = Array.from(
+              scene.querySelectorAll<HTMLElement>(
+                ".display-title .reveal-word, .reveal-title .reveal-word, .couple-title .reveal-word",
+              ),
+            );
+            const support = Array.from(scene.querySelectorAll<HTMLElement>(".reveal-support"));
+            const body = Array.from(scene.querySelectorAll<HTMLElement>(".story-body"));
+            const media = Array.from(scene.querySelectorAll<HTMLElement>(".reveal-media"));
             const index = Number(scene.dataset.sceneIndex || 0);
 
-            gsap.set(support, { opacity: 0, filter: "blur(14px)", y: 20 });
-            gsap.set(words, {
-              opacity: 0,
-              filter: "blur(24px)",
-              y: 68,
-              rotateX: 74,
-              skewY: 1.8,
-              transformOrigin: "50% 100%",
+            gsap.set(headline, {
+              autoAlpha: 0, filter: "blur(10px)", y: 34, rotateX: 28,
             });
-            gsap.set(media, { opacity: 0, filter: "blur(18px)", y: 36, scale: 0.94, rotation: index % 2 ? 3 : -3 });
+            gsap.set(support, { autoAlpha: 0, y: 16 });
+            gsap.set(body, { autoAlpha: 0, y: 16 });
+            gsap.set(media, {
+              autoAlpha: 0, filter: "blur(9px)", y: 22, scale: 0.97,
+              rotation: index % 2 ? 1.5 : -1.5,
+            });
 
-            const timeline = gsap.timeline({
+            const sceneTimeline = gsap.timeline({
+              defaults: { ease: "none" },
               scrollTrigger: {
                 trigger: scene,
-                start: "top top",
+                // Reveal while the scene is entering the viewport, not after
+                // its sticky stage has already occupied the whole screen.
+                start: "top 65%",
                 end: "bottom bottom",
-                scrub: 0.95,
+                scrub: isMobile ? 0.4 : 0.6,
                 invalidateOnRefresh: true,
               },
             });
 
-            timeline
-              .to(
-                support,
-                { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.16, stagger: 0.04, ease: "none" },
-                0,
-              )
-              .to(
-                words,
-                { opacity: 1, filter: "blur(0px)", y: 0, rotateX: 0, skewY: 0, duration: 0.32, stagger: 0.014, ease: "none" },
-                0.04,
-              )
-              .to(
-                media,
-                { opacity: 1, filter: "blur(0px)", y: 0, scale: 1, rotation: index % 2 ? 1 : -1, duration: 0.26, ease: "none" },
-                0.12,
-              )
-              .to({}, { duration: 0.18 })
-              .to(words, { opacity: 0.08, filter: "blur(18px)", y: -34, duration: 0.22, stagger: 0.006, ease: "none" }, 0.74)
-              .to(support, { opacity: 0.1, filter: "blur(14px)", y: -18, duration: 0.16, ease: "none" }, 0.76)
-              .to(media, { opacity: 0.08, filter: "blur(18px)", y: -20, scale: 0.975, duration: 0.2, ease: "none" }, 0.74);
+            sceneTimeline
+              .to(headline, {
+                autoAlpha: 1, filter: "blur(0px)", y: 0, rotateX: 0,
+                duration: 0.16, stagger: 0.006,
+              }, 0.04)
+              .to(support, { autoAlpha: 1, y: 0, duration: 0.13, stagger: 0.015 }, 0.07)
+              .to(body, { autoAlpha: 1, y: 0, duration: 0.14 }, 0.15)
+              .to(media, {
+                autoAlpha: 1, filter: "blur(0px)", y: 0, scale: 1,
+                rotation: 0, duration: 0.18,
+              }, 0.09)
+              // The scene remains fully readable until the last portion of
+              // its scroll range; departure is gentle and happens near exit.
+              .to([...headline, ...support, ...body, ...media], {
+                autoAlpha: 0, filter: "blur(8px)", y: -14, duration: 0.12,
+              }, 0.87)
+              .to({}, { duration: 0.01 }, 0.99);
           });
 
-          gsap.utils.toArray<HTMLElement>("[data-reveal-section]").forEach((section) => {
-            const children = section.querySelectorAll<HTMLElement>("[data-reveal-item]");
-            createScrubReveal(children, {
-              fromBlur: 26,
-              fromY: 64,
-              fromRotateX: 70,
-              outBlur: 24,
-              outY: -54,
-              outOpacity: 0,
-              stagger: 0.08,
+          root.querySelectorAll<HTMLElement>("[data-reveal-section]").forEach((section) => {
+            // RSVP, gifts and FAQ are interactive: never scroll-hide their
+            // inputs, buttons, feedback, or accordion content.
+            if (section.matches(".rsvp-section, .gifts-section, .faq-section")) return;
+
+            section.querySelectorAll<HTMLElement>("[data-reveal-item]").forEach((item) => {
+              if (
+                item.matches(".gallery-marquee, form, details") ||
+                item.querySelector("form, input, textarea, button")
+              ) return;
+
+              gsap.fromTo(item,
+                { autoAlpha: 0, y: 24, filter: "blur(6px)" },
+                {
+                  autoAlpha: 1, y: 0, filter: "blur(0px)",
+                  duration: 0.65, ease: "power2.out",
+                  scrollTrigger: {
+                    trigger: item,
+                    start: "top 93%",
+                    once: true,
+                    invalidateOnRefresh: true,
+                  },
+                },
+              );
             });
           });
 
-          ScrollTrigger.refresh();
+          // Font loading can change line wraps and therefore trigger geometry.
+          // ScrollTrigger already observes resizing; this covers late fonts.
+          let active = true;
+          const refresh = () => { if (active) ScrollTrigger.refresh(); };
+          void document.fonts?.ready.then(refresh);
+          window.addEventListener("load", refresh, { once: true });
+          refresh();
+          return () => {
+            active = false;
+            window.removeEventListener("load", refresh);
+          };
         },
       );
     }, root);
@@ -585,6 +522,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
   const israParents = getVisibleNames(data.parents.israel);
   const isNotAttending = attendance === "No podre asistir";
   const hasMap = Boolean(data.venue.mapUrl);
+  const hasAudio = data.audio.enabled;
 
   const registryLinks = data.gifting.registries.map((registry) => {
     if (registry.label === "Palacio de Hierro") {
@@ -606,7 +544,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
 
   return (
     <main ref={rootRef} className={`wedding-site ${entered ? "entered" : ""}`}>
-      <audio ref={audioRef} src={data.audio.src} preload="metadata" onEnded={() => setAudioEnabled(false)} />
+      {hasAudio ? <audio ref={audioRef} src={data.audio.src} preload="metadata" onEnded={() => setAudioEnabled(false)} /> : null}
 
       <div className={`entry-screen ${entered ? "is-hidden" : ""}`} role="dialog" aria-modal="true" aria-label="Abrir invitacion">
         <div className="paper-noise" aria-hidden="true" />
@@ -619,14 +557,14 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
           </h1>
           <p className="entry-date">{data.date.short}</p>
           <div className="entry-actions">
-            <button type="button" className="button button-primary" onClick={() => enter(true)}>Entrar con audio</button>
-            <button type="button" className="button button-secondary" onClick={() => enter(false)}>Continuar sin audio</button>
+            {hasAudio ? <button type="button" className="button button-primary" onClick={() => enter(true)}>Entrar con audio</button> : null}
+            <button type="button" className={`button ${hasAudio ? "button-secondary" : "button-primary"}`} onClick={() => enter(false)}>Abrir invitación</button>
           </div>
           <p className="entry-note">{linkedHousehold?`Una invitación especial para ${linkedHousehold.name}. La preparamos con mucho cariño para ustedes.`:data.intro.entryNote}</p>
         </div>
       </div>
 
-      {entered && (
+      {entered && hasAudio && (
         <button type="button" className="audio-control" onClick={toggleAudio} aria-pressed={audioEnabled}>
           <span className="audio-dot">{audioEnabled ? "II" : ">"}</span>
           <span>{audioEnabled ? "Pausar historia" : "Escuchar historia"}</span>
@@ -734,11 +672,11 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
           </div>
 
           <div className="invite-actions reveal-support">
-            <a className="button button-primary" href="#detalles">Ver itinerario</a>
-            <a className="button button-secondary" href="#rsvp">Confirmar asistencia</a>
+            <a className="button button-primary" href="#rsvp">Confirmar asistencia</a>
+            <a className="button button-secondary" href="#detalles">Ver detalles</a>
             {hasMap ? (
               <a className="button button-secondary" href={data.venue.mapUrl} target="_blank" rel="noreferrer">
-                Abrir ubicacion
+                Abrir ubicación
               </a>
             ) : null}
           </div>
@@ -774,7 +712,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
         <div className="section-heading" data-reveal-item>
           <p className="eyebrow">Lo que hemos vivido</p>
           <h2>Una historia hecha de muchos momentos.</h2>
-          <p>Un recorrido de recuerdos que sigue avanzando, igual que nosotros.</p>
+          <p>Algunos de nuestros momentos favoritos.</p>
         </div>
         <div className="gallery-marquee" data-reveal-item>
           <div className="gallery-track">
@@ -828,13 +766,13 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
         <div className="section-heading" data-reveal-item>
           <p className="eyebrow">Confirma tu asistencia</p>
           <h2>Queremos contar contigo.</h2>
-          <p>Nos ayudara muchisimo que respondas con tiempo para organizar cada detalle con carino.</p>
+          <p>Tu respuesta nos ayudará a preparar todo para recibirte.</p>
         </div>
         {linkedHousehold ? <form className="rsvp-form linked-rsvp-form" onSubmit={submitRsvp} data-reveal-item>
           <div className="linked-household-intro">
             <p className="eyebrow">INVITACIÓN PERSONALIZADA</p>
             <h3>{linkedHousehold.name}</h3>
-            <p>Hemos reservado {linkedHousehold.spotsAllowed} {linkedHousehold.spotsAllowed===1?"lugar":"lugares"} para ustedes. Confirmen por persona; si cambian de planes, pueden volver a este mismo enlace.</p>
+            <p>Reservamos {linkedHousehold.spotsAllowed} {linkedHousehold.spotsAllowed===1?"lugar":"lugares"} para ustedes. Confirmen por persona; pueden volver a este enlace si cambian de planes.</p>
           </div>
           {linkedGuests.map(guest=><fieldset className="linked-person" key={guest.id}>
             <legend>{guest.firstName} {guest.lastName}</legend>
@@ -912,7 +850,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
               </button>
             </article>
 
-            {registryLinks.map((registry) => (
+            {registryLinks.filter((registry) => Boolean(registry.href)).map((registry) => (
               <article className="gift-card" key={registry.label}>
                 <span>{registry.label}</span>
                 <h3>{registry.title}</h3>
@@ -933,7 +871,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
       <section id="faq" className="content-section faq-section" data-reveal-section>
         <div className="section-heading" data-reveal-item>
           <p className="eyebrow">Preguntas frecuentes</p>
-          <h2>Todo lo que necesitas saber.</h2>
+          <h2>Por si te lo preguntabas.</h2>
         </div>
         <div className="faq-list">
           {data.faq.map((item) => (
