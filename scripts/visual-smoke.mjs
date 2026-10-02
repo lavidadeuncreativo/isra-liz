@@ -150,6 +150,8 @@ async function inspect(width, height, reduced = false) {
   assert(!story.horizontalOverflow, width + "px: overflow horizontal");
   const geometry = await evaluate("(() => {const s=document.querySelector('.story-scene-1'),stage=s.querySelector('.scene-stage'),title=s.querySelector('.display-title'),word=title.querySelector('.reveal-word'),photo=s.querySelector('.story-photo'); const r=e=>{const p=e.getBoundingClientRect();return {top:Math.round(p.top),bottom:Math.round(p.bottom),height:Math.round(p.height)};}; return {scrollY:Math.round(window.scrollY),viewport:window.innerHeight,section:r(s),stage:r(stage),title:r(title),word:r(word),photo:r(photo),stagePos:getComputedStyle(stage).position,stageOverflow:getComputedStyle(stage).overflow};})()");
   console.log("STORY_GEOMETRY " + width + " " + JSON.stringify(geometry));
+  const paint = await evaluate("(() => {const nodes=['.story-scene-1','.story-scene-1 .scene-stage','.story-scene-1 .scene-layout','.story-scene-1 .scene-copy','.story-scene-1 .display-title','.story-scene-1 .display-title .reveal-word','.story-scene-1 .story-body','.story-scene-1 .story-photo'];return {layers:nodes.map(q=>{const e=document.querySelector(q);const s=getComputedStyle(e);return {q,opacity:s.opacity,visibility:s.visibility,filter:s.filter,display:s.display,transform:s.transform,color:s.color,z:s.zIndex}}),topHit:document.elementFromPoint(innerWidth/2,220)?.className,photoHit:document.elementFromPoint(innerWidth/2,520)?.className};})()");
+  console.log("STORY_PAINT " + width + " " + JSON.stringify(paint));
   assert(geometry.title.bottom > 0 && geometry.title.top < height &&
     geometry.photo.bottom > 0 && geometry.photo.top < height,
     width + "px: texto o foto fuera del viewport " + JSON.stringify(geometry));
