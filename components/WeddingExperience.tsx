@@ -199,6 +199,11 @@ function StoryScene({
           </div>
           <figure className="story-photo reveal-media">
             <Image src={image} alt={alt} fill sizes="(max-width: 820px) 82vw, 38vw" />
+            <span className="story-vellum" data-story-vellum aria-hidden="true">
+              <span className="story-vellum-number">{String(index + 1).padStart(2, "0")}</span>
+              <span className="story-vellum-title">Un pedacito de nosotros</span>
+              <span className="story-vellum-mark">I &amp; L</span>
+            </span>
           </figure>
         </div>
       </div>
@@ -407,6 +412,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
             const bodyWords = Array.from(scene.querySelectorAll<HTMLElement>(".story-body .reveal-word"));
             const support = Array.from(scene.querySelectorAll<HTMLElement>(".reveal-support"));
             const photo = Array.from(scene.querySelectorAll<HTMLElement>(".reveal-media"));
+            const vellum = Array.from(scene.querySelectorAll<HTMLElement>("[data-story-vellum]"));
             const index = Number(scene.dataset.sceneIndex || 0);
 
             gsap.set(headline, {
@@ -427,6 +433,7 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
               scale: 0.86,
               rotation: index % 2 ? 5 : -5,
             });
+            gsap.set(vellum, { autoAlpha: 1, xPercent: 0, filter: "blur(0px)" });
 
             // Starts as the NEXT scene enters the bottom of the viewport.
             // This eliminates the blank gap caused by "top 65%".
@@ -461,6 +468,10 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
                 y: 0, scale: 1, rotation: 0,
                 duration: 0.24,
               }, 0.09)
+              .to(vellum, {
+                autoAlpha: 0, xPercent: 28, filter: "blur(8px)",
+                duration: 0.21,
+              }, 0.28)
               // After its reveal, the photo has gentle depth while the text
               // remains fully readable for the majority of the scene.
               .to(photo, {
@@ -697,19 +708,28 @@ export default function WeddingExperience({ data, linkedHousehold, rsvpLinkedOnl
 
       <div className={`entry-screen ${entered ? "is-hidden" : ""}`} role="dialog" aria-modal="true" aria-label="Abrir invitacion">
         <div className="paper-noise" aria-hidden="true" />
+        <div className="entry-cover-foil" aria-hidden="true">
+          <span className="foil-top">Nuestro día · Nuestra historia</span>
+          <span className="foil-bottom">XX · II · MMXXVII</span>
+        </div>
         <div className="entry-content">
-          <p className="eyebrow">Una invitación muy nuestra</p>
+          <p className="entry-chapter">Una invitación para ti</p>
+          <p className="entry-cover-label">EL DÍA QUE QUEREMOS COMPARTIR CONTIGO</p>
           <h1>
             <span>{data.couple.partnerOne}</span>
             <em>&</em>
             <span>{data.couple.partnerTwo}</span>
           </h1>
-          <p className="entry-date">{data.date.short}</p>
+          <div className="entry-divider" aria-hidden="true"><span>✳</span></div>
+          <p className="entry-date">20 DE FEBRERO DE 2027</p>
+          <p className="entry-note">{linkedHousehold ? `Esta historia también es para ${linkedHousehold.name}.` : "Nos hará muy felices que estés con nosotros."}</p>
           <div className="entry-actions">
             {hasAudio ? <button type="button" className="button button-primary" onClick={() => enter(true)}>Entrar con audio</button> : null}
-            <button type="button" className={`button ${hasAudio ? "button-secondary" : "button-primary"}`} onClick={() => enter(false)}>Abrir invitación</button>
+            <button type="button" className={`button ${hasAudio ? "button-secondary" : "button-primary"}`} onClick={() => enter(false)}>
+              Abrir invitación <span className="entry-action-arrow" aria-hidden="true">↗</span>
+            </button>
           </div>
-          <p className="entry-note">{linkedHousehold?`Una invitación especial para ${linkedHousehold.name}. La preparamos con mucho cariño para ustedes.`:data.intro.entryNote}</p>
+          <span className="entry-hint">Desliza las páginas de nuestra historia</span>
         </div>
       </div>
 
