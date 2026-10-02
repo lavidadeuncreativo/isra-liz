@@ -11,7 +11,7 @@ export const wedding = {
       "¿Quién pensaría que",
       "estos dos se iban a casar?",
     ],
-    body: "Sí, somos nosotros. El 20 de febrero queremos compartir contigo una de las fechas más importantes para nosotros.",
+    body: "Sí, somos nosotros. Y nos hace mucha ilusión poder invitarte.",
     instruction: "Baja, que apenas empieza",
   },
   date: {
