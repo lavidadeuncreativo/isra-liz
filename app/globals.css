@@ -1786,6 +1786,255 @@ summary:focus-visible {
   .mobile-dock,.quick-nav { backdrop-filter: none; }
 }
 
+/* ALBUM COVER — a tactile first interaction, not a generic modal. */
+.entry-screen {
+  isolation: isolate;
+  overflow: hidden;
+  color: #f6e9e2;
+  background: #531e32;
+  transform: translate3d(0,0,0);
+  transform-origin: center top;
+  transition: transform 1120ms cubic-bezier(.76,.02,.19,1), visibility 1120ms;
+  box-shadow: 0 30px 80px rgba(25,11,17,.35);
+  will-change: transform;
+}
+.entry-screen::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: -1px;
+  pointer-events: none;
+  background:
+    url("/images/album-cover-relief.svg") center / cover no-repeat,
+    radial-gradient(ellipse at 50% 28%, #74374a 0%, #501c30 67%, #35111f 100%);
+  opacity: .98;
+}
+.entry-screen::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 43%, rgba(17,4,12,.32), transparent 56%),
+              linear-gradient(106deg, rgba(255,224,214,.065), transparent 22%, rgba(10,3,8,.2) 99%);
+  mix-blend-mode: multiply;
+}
+.entry-screen .paper-noise {
+  z-index: 1;
+  opacity: .13;
+  mix-blend-mode: screen;
+  background-image: radial-gradient(rgba(249,212,203,.38) .6px, transparent .75px);
+  background-size: 4px 4px;
+}
+.entry-screen.is-hidden {
+  opacity: 1;
+  visibility: hidden;
+  transform: translate3d(0,-105%,0);
+  pointer-events: none;
+}
+.entry-cover-foil {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .23em;
+  color: rgba(246,219,211,.73);
+}
+.entry-cover-foil .foil-top,
+.entry-cover-foil .foil-bottom {
+  position: absolute;
+  left: 50%;
+  display: block;
+  width: calc(100% - 120px);
+  text-align: center;
+  transform: translateX(-50%);
+  text-transform: uppercase;
+}
+.entry-cover-foil .foil-top { top: clamp(32px,7vh,76px); }
+.entry-cover-foil .foil-bottom { bottom: clamp(28px,5vh,58px); }
+.entry-content {
+  z-index: 3;
+  width: min(650px,100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #f5e6df;
+  text-align: center;
+}
+.entry-chapter {
+  margin: 0 0 28px;
+  color: #eaccc6;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: clamp(25px,4.4vw,39px);
+  font-style: italic;
+  line-height: 1;
+  letter-spacing: -.015em;
+}
+.entry-cover-label {
+  margin: 0 0 16px;
+  color: rgba(242,213,201,.68);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: .19em;
+  line-height: 1.65;
+}
+.entry-content h1 {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  align-items: center;
+  width: 100%;
+  color: #f5e8df;
+  font-family: var(--font-serif),Georgia,serif;
+  font-size: clamp(116px,15vw,182px);
+  font-weight: 400;
+  letter-spacing: -.058em;
+  line-height: .68;
+  text-shadow: 0 1px 0 rgba(255,242,225,.11), 0 8px 24px rgba(15,2,10,.19);
+}
+.entry-content h1 span { display: block; }
+.entry-content h1 em {
+  margin: .09em 0 .14em;
+  color: #d4a3a6;
+  font-size: .62em;
+  font-style: italic;
+  line-height: .83;
+  letter-spacing: -.065em;
+}
+.entry-divider {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  width: min(210px,72%);
+  margin: clamp(21px,5vh,38px) auto 12px;
+  color: #e5c6ba;
+  font-size: 12px;
+}
+.entry-divider::before,
+.entry-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(236,195,187,.44);
+}
+.entry-date {
+  margin: 0;
+  color: #f1d4cd;
+  font-size: clamp(11px,1.5vw,14px);
+  font-weight: 650;
+  letter-spacing: .20em;
+  line-height: 1.7;
+}
+.entry-note {
+  margin: 18px auto 0;
+  max-width: 30ch;
+  color: rgba(250,231,223,.87);
+  font-family: var(--font-serif),Georgia,serif;
+  font-size: clamp(22px,3vw,28px);
+  line-height: 1.22;
+  letter-spacing: -.014em;
+}
+.entry-actions { width: 100%; margin: 30px auto 0; }
+.entry-actions .button {
+  gap: 14px;
+  min-height: 56px;
+  padding: 14px 27px;
+  border-radius: 3px;
+  border: 1px solid rgba(254,237,222,.75);
+  color: #521d30;
+  background: #f3e9dc;
+  box-shadow: 5px 5px 0 rgba(31,8,20,.22), inset 0 1px 0 rgba(255,255,255,.65);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.entry-actions .button:hover { background: #fff5e8; transform: translateY(-2px); }
+.entry-action-arrow { font-family: var(--font-serif); font-size: 22px; line-height: .7; }
+.entry-hint {
+  display: block;
+  margin-top: 20px;
+  color: rgba(244,223,213,.58);
+  font-size: 11px;
+  font-weight: 550;
+  letter-spacing: .08em;
+}
+.entry-content .entry-actions button:focus-visible {
+  outline: 2px solid #fff8ec;
+  outline-offset: 5px;
+}
+
+/* Tracing-paper reveal: the photograph appears under an album leaf. */
+.story-vellum {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(245,239,229,.81);
+  backdrop-filter: blur(13px);
+  -webkit-backdrop-filter: blur(13px);
+  color: #622b40;
+  pointer-events: none;
+}
+.story-vellum-number {
+  font-family: var(--font-serif),Georgia,serif;
+  font-size: clamp(95px,11vw,150px);
+  font-style: italic;
+  letter-spacing: -.07em;
+  line-height: 1;
+  opacity: .2;
+}
+.story-vellum-title {
+  font-family: var(--font-serif),Georgia,serif;
+  font-size: clamp(28px,2.8vw,44px);
+  font-style: italic;
+  line-height: 1.1;
+  text-align: center;
+}
+.story-vellum-mark {
+  margin-top: 24px;
+  font: 750 10px var(--font-sans);
+  letter-spacing: .28em;
+}
+@media (max-width: 820px) {
+  .entry-screen { padding: 30px 27px; }
+  .entry-cover-foil .foil-top,
+  .entry-cover-foil .foil-bottom { width: calc(100% - 72px); font-size: 9px; }
+  .entry-cover-foil .foil-top { top: max(29px,env(safe-area-inset-top)); }
+  .entry-cover-foil .foil-bottom { bottom: max(28px,env(safe-area-inset-bottom)); }
+  .entry-chapter { margin-bottom: 23px; }
+  .entry-cover-label { max-width: 28ch; font-size: 9px; }
+  .entry-content h1 { font-size: clamp(96px,27vw,148px); }
+  .entry-divider { margin-top: 22px; }
+  .entry-note { margin-top: 16px; }
+  .entry-actions { margin-top: 25px; }
+  .entry-actions .button { width: min(290px,100%); }
+  .story-vellum-number { font-size: 85px; }
+  .story-vellum-title { font-size: 31px; }
+}
+@media (max-width: 820px) and (max-height: 700px) {
+  .entry-chapter { margin-bottom: 15px; font-size: 23px; }
+  .entry-cover-label { margin-bottom: 11px; }
+  .entry-content h1 { font-size: clamp(76px,23vw,123px); }
+  .entry-content h1 em { margin: .06em 0 .1em; }
+  .entry-divider { margin: 16px auto 10px; }
+  .entry-note { margin-top: 11px; font-size: 21px; }
+  .entry-actions { margin-top: 17px; }
+  .entry-hint { margin-top: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .entry-screen { transition: opacity 220ms ease, visibility 220ms ease; will-change: auto; }
+  .entry-screen.is-hidden { transform: none; opacity: 0; }
+  .story-vellum { display: none !important; }
+}
+
 /* Linked RSVP with wedding platform */
 .linked-rsvp-form .linked-household-intro{
   padding:20px;
