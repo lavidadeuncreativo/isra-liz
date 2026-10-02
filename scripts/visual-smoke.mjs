@@ -148,6 +148,12 @@ async function inspect(width, height, reduced = false) {
   const story = await evaluate("(() => { const s=document.querySelector('.story-scene-1'); const last=[...s.querySelectorAll('.display-title .reveal-word')].at(-1);const lastBody=[...s.querySelectorAll('.story-body .reveal-word')].at(-1); const photo=s.querySelector('.story-photo'); return {word:Number(getComputedStyle(last).opacity),body:Number(getComputedStyle(lastBody).opacity),photo:Number(getComputedStyle(photo).opacity),horizontalOverflow:document.documentElement.scrollWidth>window.innerWidth+2}; })()");
   assert(story.word > 0.85 && story.body > 0.85 && story.photo > 0.85, width + "px: escena no legible " + JSON.stringify(story));
   assert(!story.horizontalOverflow, width + "px: overflow horizontal");
+  const geometry = await evaluate("(() => {const s=document.querySelector('.story-scene-1'),stage=s.querySelector('.scene-stage'),title=s.querySelector('.display-title'),word=title.querySelector('.reveal-word'),photo=s.querySelector('.story-photo'); const r=e=>{const p=e.getBoundingClientRect();return {top:Math.round(p.top),bottom:Math.round(p.bottom),height:Math.round(p.height)};}; return {scrollY:Math.round(window.scrollY),viewport:window.innerHeight,section:r(s),stage:r(stage),title:r(title),word:r(word),photo:r(photo),stagePos:getComputedStyle(stage).position,stageOverflow:getComputedStyle(stage).overflow};})()");
+  console.log("STORY_GEOMETRY " + width + " " + JSON.stringify(geometry));
+  assert(geometry.title.bottom > 0 && geometry.title.top < height &&
+    geometry.photo.bottom > 0 && geometry.photo.top < height,
+    width + "px: texto o foto fuera del viewport " + JSON.stringify(geometry));
+
   // At the end of a narrative scene the editorial blur must return, not
   // remain static after the first reveal.
   if (!reduced) {
