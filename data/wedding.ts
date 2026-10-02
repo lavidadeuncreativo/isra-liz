@@ -5,14 +5,14 @@ export const wedding = {
     wordmark: "Isra&Liz",
   },
   intro: {
-    entryNote: "Pasa, lo preparamos con mucho cariño para ti.",
-    kicker: "Esto lo queremos vivir contigo",
+    entryNote: "Qué gusto que estés aquí. Entra, tenemos algo que contarte.",
+    kicker: "Te lo queremos contar nosotros",
     titleLines: [
       "¿Quién pensaría que",
       "estos dos se iban a casar?",
     ],
-    body: "Y nos haría muy felices compartir este día contigo.",
-    instruction: "Sigue bajando",
+    body: "Sí, somos nosotros. El 20 de febrero queremos compartir contigo una de las fechas más importantes para nosotros.",
+    instruction: "Baja, que apenas empieza",
   },
   date: {
     iso: "2027-02-20",
@@ -41,15 +41,15 @@ export const wedding = {
   story: [
     {
       kicker: "Cuando coincidimos",
-      title: "Un día, nuestras historias se encontraron.",
-      body: "Entre pláticas, risas y momentos sencillos, empezamos a construir algo que hoy nos hace muy felices.",
+      title: "De pronto, todo empezó a ser de los dos.",
+      body: "Los planes, los días normales, las risas y hasta las pequeñas cosas. Hay mucho de nuestra historia que no cabe en una sola foto.",
       image: "/images/gallery/momento-04.jpg",
       alt: "Isra y Liz abrazados en una celebración",
     },
     {
       kicker: "Y aquí estamos",
-      title: "Lo mejor es poder compartirlo.",
-      body: "Nos ilusiona comenzar esta nueva etapa rodeados de las personas que queremos. Y eso te incluye a ti.",
+      title: "Y ahora nos toca celebrar.",
+      body: "No queremos que este día se quede solo en nuestras fotos. Queremos vivirlo con nuestra gente. Contigo.",
       image: "/images/gallery/momento-06.jpg",
       alt: "Isra y Liz besándose bajo un arco de piedra",
     },
@@ -98,7 +98,7 @@ export const wedding = {
     {
       label: "Código de vestimenta",
       title: "Formal",
-      body: "Formal, cómodo y listo para bailar toda la noche.",
+      body: "Ven formal, pero con ganas de bailar y de estar cómodo.",
       visual: "Dress",
     },
   ],
@@ -106,31 +106,31 @@ export const wedding = {
     {
       time: "5:00 PM",
       title: "Recepción de invitados",
-      note: "Llega con tiempo para que nos acompañes desde el inicio.",
+      note: "Nos encantará verte desde el principio.",
     },
     {
       time: "5:30 PM",
       title: "Ceremonia",
-      note: "El momento de decir que sí.",
+      note: "Aquí empieza todo.",
     },
     {
       time: "7:00 PM",
       title: "Celebración",
-      note: "Cena, brindis, música y una gran noche juntos.",
+      note: "Ahora sí: a cenar, brindar y bailar.",
     },
   ],
   announcement: {
-    kicker: "Y entonces pasó",
+    kicker: "Y sí, va en serio",
     title: "Nos vamos a casar.",
     body: "Y queremos que formes parte de este día.",
   },
   gifting: {
     eyebrow: "Mesa de regalos",
-    title: "Tenerte con nosotros ya es un regalo.",
-    body: "Si además quieres tener un detalle, aquí te dejamos una opción. Gracias de corazón.",
-    gentleNote: "Lo más importante para nosotros es celebrarlo contigo.",
+    title: "Lo mejor es que estés ahí.",
+    body: "De verdad: nos hace ilusión verte. Y si también quieres regalarnos algo, aquí te dejamos algunas opciones.",
+    gentleNote: "Gracias por ser parte de este día.",
     contributionTitle: "Aportación libre",
-    contributionBody: "Si quieres hacer una aportación, elige un monto y te compartiremos cómo hacerlo.",
+    contributionBody: "Si quieres hacer una aportación, puedes elegir el monto y te compartimos los datos por privado.",
     contributionCta: "Quiero aportar este monto",
     contributionSuccess: "Recibimos tu mensaje. Pronto te compartiremos los datos para hacerlo.",
     amounts: [500, 1000, 1500, 2000, 3000],
@@ -164,8 +164,8 @@ export const wedding = {
     },
   ],
   closing: {
-    body: "Gracias por estar cerca de nosotros y ser parte de esta historia.",
-    title: "Ahora sí, ¡a celebrarlo juntos!",
+    body: "Nos va a dar mucho gusto encontrarte ese día.",
+    title: "Ahora sí, nos vemos en febrero.",
   },
 } as const;
 
