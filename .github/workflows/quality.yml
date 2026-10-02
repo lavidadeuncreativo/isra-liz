@@ -1,0 +1,53 @@
+name: Invitación - calidad
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+
+      - name: Preparar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Comprobar ESLint
+        run: pnpm lint
+
+      - name: Compilar Next.js
+        run: pnpm build
+
+      - name: Prueba de carga de la invitación
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm start --port 3000 > /tmp/isra-liz-next.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error http://localhost:3000/ -o /tmp/isra-liz-home.html; then
+              grep -q "Isra" /tmp/isra-liz-home.html
+              grep -q "Liz" /tmp/isra-liz-home.html
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/isra-liz-next.log
+          exit 1
